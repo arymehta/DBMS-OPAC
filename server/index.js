@@ -7,11 +7,11 @@ dotenv.config();
 const PORT = process.env.PORT || 3000;
 
 // deleteDB()
-initDB();
 app.get("/", (req, res) => {
   res.send("Welcome to the DBMS OPAC API");
 });
 
 app.listen(PORT, () => {
+  initDB();
   console.log(`Server is running on port ${PORT}`);
 });
