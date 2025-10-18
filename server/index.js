@@ -1,6 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
-import { initDB, deleteDB } from "./db/initdb.js";
+import { initDB } from "./db/initdb.js";
 
 const app = express();
 dotenv.config();
