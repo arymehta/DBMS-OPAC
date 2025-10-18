@@ -1,7 +1,7 @@
 // Your table creation file
 import sql from './dbconn.js'
 import { connectDB } from "./dbconn.js"
-
+import {populateDB} from './populateDB.js'
 // =========== ENTITY SETS ==============
 
 
@@ -179,6 +179,7 @@ export const initDB = async () => {
         await createBookDetails()
         await createIssues()
         await createFine()
+        await populateDB()
         console.log("DB initialized successfully")
     } catch (error) {
         console.error("Error creating tables:", error)
