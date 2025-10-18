@@ -13,7 +13,6 @@ const insertUsers = async () => {
       ('Diana Prince', 1, 'ISSUER')
     ON CONFLICT DO NOTHING;
   `
-  console.log("-- Users inserted")
 }
 
 const insertLibraries = async () => {
@@ -23,7 +22,6 @@ const insertLibraries = async () => {
       ('City Branch', '456 Elm Street')
     ON CONFLICT DO NOTHING;
   `
-  console.log("-- Libraries inserted")
 }
 
 const insertISBNs = async () => {
@@ -36,7 +34,6 @@ const insertISBNs = async () => {
       (9789386538619, 'Wings of Fire', 'A.P.J. Abdul Kalam', 'Biography', 'Universities Press', 'English', 180, 'Paperback')
     ON CONFLICT DO NOTHING;
   `
-  console.log("-- ISBNs inserted")
 }
 
 const insertBooks = async () => {
@@ -49,7 +46,6 @@ const insertBooks = async () => {
       ('AVAILABLE', '920 KAL')
     ON CONFLICT DO NOTHING;
   `
-  console.log("-- Books inserted")
 }
 
 const insertCatalog = async () => {
@@ -60,9 +56,7 @@ const insertCatalog = async () => {
       (2, 3),
       (2, 4)
     ON CONFLICT DO NOTHING;
-  `
-  console.log("-- Catalog inserted")
-}
+  `}
 
 const insertBookDetails = async () => {
   await sql`
@@ -73,7 +67,6 @@ const insertBookDetails = async () => {
       (9789386538619, 4)
     ON CONFLICT DO NOTHING;
   `
-  console.log("-- Book details inserted")
 }
 
 const insertIssues = async () => {
@@ -84,7 +77,6 @@ const insertIssues = async () => {
       (4, 2, 4, '2025-09-25', '2025-10-10')
     ON CONFLICT DO NOTHING;
   `
-  console.log("-- Issues inserted")
 }
 
 const insertFines = async () => {
@@ -95,15 +87,12 @@ const insertFines = async () => {
       (2, 0.00, TRUE, '2025-10-12', 'No fine')
     ON CONFLICT DO NOTHING;
   `
-  console.log("-- Fines inserted")
 }
-
 
 // ---------- MASTER POPULATION FUNCTION ----------
 export const populateDB = async () => {
   try {
     await connectDB()
-    console.log("Connected to DB...")
 
     await insertUsers()
     await insertLibraries()
