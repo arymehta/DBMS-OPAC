@@ -3,7 +3,11 @@
     "@supabase/supabase-js": "^2.75.0",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "nodemon": "^3.1.10",
     "postgres": "^3.4.7"
   },
-  "type": "module"
+  "type": "module",
+  "scripts": {
+    "start": "nodemon index.js"
+  }
 }
