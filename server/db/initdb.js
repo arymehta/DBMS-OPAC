@@ -167,7 +167,7 @@ const createReservations = async () => {
       library_id INT NOT NULL,
       uid INT NOT NULL,
       reserved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      status ENUM('ACTIVE', 'CANCELLED', 'ISSUED') DEFAULT 'ACTIVE',
+      status VARCHAR(10) CHECK (status IN ('ACTIVE', 'CANCELLED', 'ISSUED')) DEFAULT 'ACTIVE',
       FOREIGN KEY(book_id, library_id) REFERENCES CATALOG(book_id, library_id)
         ON UPDATE CASCADE
         ON DELETE CASCADE,
