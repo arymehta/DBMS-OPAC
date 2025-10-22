@@ -158,6 +158,26 @@ const createIssues = async () => {
     return issues
 }
 
+// Users can reserve books (first-come, first-served)
+const createReservations = async () => {
+  const reservations = await sql`
+    CREATE TABLE IF NOT EXISTS RESERVATIONS (
+      reservation_id SERIAL PRIMARY KEY,
+      book_id INT NOT NULL,
+      library_id INT NOT NULL,
+      uid INT NOT NULL,
+      reserved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      status ENUM('ACTIVE', 'CANCELLED', 'ISSUED') DEFAULT 'ACTIVE',
+      FOREIGN KEY(book_id, library_id) REFERENCES CATALOG(book_id, library_id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+      FOREIGN KEY(uid) REFERENCES USERS(uid)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT
+    )
+  `
+  return reservations
+}
 
 // export const deleteDB = async () => {
 //     try {
@@ -178,6 +198,7 @@ export const initDB = async () => {
         await createCatalog()
         await createBookDetails()
         await createIssues()
+        await createReservations()
         await createFine()
         await populateDB()
         console.log("DB initialized successfully")

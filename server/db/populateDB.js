@@ -79,6 +79,16 @@ const insertIssues = async () => {
   `
 }
 
+const insertReservations = async() => {
+	await sql`
+		INSERT INTO RESERVATIONS (book_id, library_id, uid)
+		VALUES
+			(2, 1, 2),
+			(3, 2, 3)
+		ON CONFLICT DO NOTHING;
+	`
+}
+
 const insertFines = async () => {
   await sql`
     INSERT INTO FINE (issue_id, amount, paid_status, paid_date, reason)
