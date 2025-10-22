@@ -112,6 +112,7 @@ export const populateDB = async () => {
     await insertBookDetails()
     await insertIssues()
     await insertFines()
+    await insertReservations()
 
     console.log("Database populated successfully!")
   } catch (error) {

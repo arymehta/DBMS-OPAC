@@ -200,7 +200,7 @@ export const initDB = async () => {
         await createIssues()
         await createReservations()
         await createFine()
-        await populateDB()
+        // await populateDB()
         console.log("DB initialized successfully")
     } catch (error) {
         console.error("Error creating tables:", error)
