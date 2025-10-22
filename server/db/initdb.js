@@ -2,6 +2,7 @@
 import sql from './dbconn.js'
 import { connectDB } from "./dbconn.js"
 import {populateDB} from './populateDB.js'
+
 // =========== ENTITY SETS ==============
 
 
@@ -188,22 +189,59 @@ const createReservations = async () => {
 //     return
 // }
 
+const checkIfTablesExist = async () => {
+  const result = await sql`
+    SELECT COUNT(*) as table_count 
+    FROM information_schema.tables 
+    WHERE table_schema = 'public' 
+    AND table_name IN ('users', 'library', 'isbn', 'books', 'catalog', 'book_details', 'issues', 'reservations', 'fine')
+  `;
+  return parseInt(result[0].table_count) === 9; //i have hardcoded 9 tables, maybe change later
+};
+
+const checkIfDataExists = async () => {
+  try {
+    const result = await sql`SELECT COUNT(*) as user_count FROM users LIMIT 1`;
+    return parseInt(result[0].user_count) > 0;
+  } catch (error) {
+    return false; 
+  }
+};
+
 export const initDB = async () => {
-    try {
-        await connectDB();
-        await createUser()
-        await createLibrary()
-        await createISBN()
-        await createBooks()
-        await createCatalog()
-        await createBookDetails()
-        await createIssues()
-        await createReservations()
-        await createFine()
-        await populateDB()
-        console.log("DB initialized successfully")
-    } catch (error) {
-        console.error("Error creating tables:", error)
-    }   
-    return
+  try {
+    await connectDB();
+
+    // no need to create tables or populate if they already exist
+    const tablesExist = await checkIfTablesExist();
+    const dataExists = await checkIfDataExists();
+    
+    if (tablesExist && dataExists) {
+      console.log("DB already initialized with data, skipping...");
+      return;
+    }
+    
+    if (!tablesExist) {
+      console.log("Creating database tables...");
+      await createUser()
+      await createLibrary()
+      await createISBN()
+      await createBooks()
+      await createCatalog()
+      await createBookDetails()
+      await createIssues()
+      await createReservations()
+      await createFine()
+    }
+    
+    if (!dataExists) {
+      console.log("Populating database with initial data...");
+      await populateDB()
+    }
+    
+    console.log("DB initialized successfully")
+  } catch (error) {
+    console.error("Error initializing database:", error)
+  }   
+  return
 }
