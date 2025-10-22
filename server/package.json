@@ -1,10 +1,12 @@
 {
   "dependencies": {
     "@supabase/supabase-js": "^2.75.0",
+    "@tailwindcss/vite": "^4.1.14",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "nodemon": "^3.1.10",
-    "postgres": "^3.4.7"
+    "postgres": "^3.4.7",
+    "tailwindcss": "^4.1.14"
   },
   "type": "module",
   "scripts": {
