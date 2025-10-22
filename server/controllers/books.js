@@ -1,42 +1,28 @@
 import sql, { connectDB } from "../db/dbconn.js";
 
-export const getBookDetails = async (bookId) => {
+const getBookDetails = async (req, res) => {
   try {
     await connectDB();
+    const { id } = req.params;
+    console.log("Fetching book with ID:", id);
 
-    console.log("Fetching details for book ID:", bookId);
     const bookDetails = await sql`
       SELECT *
       FROM BOOKS
       JOIN BOOK_DETAILS ON BOOKS.book_id = BOOK_DETAILS.book_id
       JOIN ISBN ON BOOK_DETAILS.isbn_id = ISBN.isbn_id
-      WHERE BOOKS.book_id = ${bookId};
+      WHERE BOOKS.book_id = ${id};
     `;
 
-    return bookDetails;
+    if (!bookDetails) {
+      return res.status(404).json({ message: "Book not found" });
+    }
+
+    return res.status(200).json(bookDetails);
   } catch (error) {
     console.error("Error fetching book details:", error);
-    throw error;
+    return res.status(500).json({ message: error.message });
   }
 };
 
-export const getBookDetailsByISBN = async (isbnId) => {
-  try {
-    await connectDB();
-
-    console.log("Fetching details for ISBN ID:", isbnId);
-    const bookDetails = await sql`
-      SELECT *
-      FROM BOOKS
-      JOIN BOOK_DETAILS ON BOOKS.book_id = BOOK_DETAILS.book_id
-      JOIN ISBN ON BOOK_DETAILS.isbn_id = ISBN.isbn_id
-      WHERE ISBN.isbn_id = ${isbnId}
-    `;
-    
-
-    return bookDetails;
-  } catch (error) {
-    console.error("Error fetching book details by ISBN:", error);
-    throw error;
-  }
-};
+export { getBookDetails };
