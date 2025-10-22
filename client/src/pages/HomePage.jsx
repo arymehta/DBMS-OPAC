@@ -19,7 +19,7 @@ const HomePage = () => {
         setLoading(true);
         const response = await axios.get("http://localhost:3000/catalog/");
         // console.log("Response from server:", response.data);
-        setBooks(response.data?.data ?? []);
+        setBooks(response.data ?? []);
       } catch (error) {
         console.error("Error fetching books:", error);
       } finally {
@@ -35,7 +35,7 @@ const HomePage = () => {
       setLoading(true);
       const response = await axios.post("http://localhost:3000/catalog/", filters);
       console.log("Filtered data:", response.data);
-      setBooks(response.data?.data ?? []);
+      setBooks(response?.data ?? []);
     } catch (error) {
       console.error("Error filtering books:", error);
     } finally {
@@ -60,7 +60,7 @@ const HomePage = () => {
     });
     try {
       const response = await axios.get("http://localhost:3000/catalog/");
-      setBooks(response.data?.data ?? []);
+      setBooks(response?.data ?? []);
     } catch (err) {
       console.error("Error resetting filters:", err);
     }
