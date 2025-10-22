@@ -98,7 +98,7 @@ const dummyBook = {
     dewey_dec_loc: "005.13 KER",
 };
 
-const BookComponent = () => {
+const BookComponent = ({book}) => {
     const {
         isbn_id,
         title,
@@ -110,7 +110,7 @@ const BookComponent = () => {
         doc_type,
         status,
         dewey_dec_loc,
-    } = dummyBook;
+    } = book;
 
     const url = `https://covers.openlibrary.org/b/isbn/${isbn_id}-M.jpg`;
 
