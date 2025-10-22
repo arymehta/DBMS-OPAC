@@ -35,6 +35,10 @@ const insertISBNs = async () => {
     ON CONFLICT DO NOTHING;
   `
 }
+/* sample json
+
+
+*/
 
 const insertBooks = async () => {
   await sql`

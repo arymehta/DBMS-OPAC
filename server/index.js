@@ -7,6 +7,7 @@ import bodyParser from 'body-parser';
 import { initDB } from "./db/initdb.js";
 import catalogRoutes from "./routes/catalog.js";
 import bookRoutes from "./routes/books.js";
+import isbnRoutes from "./routes/isbn.js";
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use(cors());
 
 app.use("/catalog", catalogRoutes);
 app.use("/books", bookRoutes);
+app.use("/isbn", isbnRoutes);
 
 app.get("/", (req, res) => {
   res.send("Welcome to the DBMS OPAC API");
