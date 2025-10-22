@@ -1,39 +1,3 @@
-// import React from "react";
-
-// import BookComponent from "../components/BookComponent";
-// import { useState, useEffect } from "react";
-// import axios from "axios";
-
-
-// const HomePage = () => {
-//     const [books, setBooks] = useState([]);
-//     useEffect(() => {
-//         const fetchBooks = async () => {
-//             try {
-//                 const response = await axios.get("http://localhost:3000/catalog/");
-//                 console.log("Response from server:", response.data);
-//                 setBooks(response.data?.data ?? []); 
-//             } catch (error) {
-//                 console.error("Error fetching books:", error);
-//             }
-//         };
-
-//         fetchBooks();
-//     }, []);
-
-
-
-//     return (
-//         <div>
-//             {books.map((book) => (
-//                 <BookComponent key={book.id} book={book} />
-//             ))}
-//         </div>
-//     );
-// }
-
-// export default HomePage;
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import BookComponent from "../components/BookComponent";
@@ -49,13 +13,12 @@ const HomePage = () => {
   });
   const [loading, setLoading] = useState(false);
 
-  // Fetch all books (GET)
   useEffect(() => {
     const fetchBooks = async () => {
       try {
         setLoading(true);
         const response = await axios.get("http://localhost:3000/catalog/");
-        console.log("Response from server:", response.data);
+        // console.log("Response from server:", response.data);
         setBooks(response.data?.data ?? []);
       } catch (error) {
         console.error("Error fetching books:", error);
@@ -66,7 +29,6 @@ const HomePage = () => {
     fetchBooks();
   }, []);
 
-  // Filter handler (POST)
   const handleFilter = async (e) => {
     e.preventDefault();
     try {
@@ -81,7 +43,6 @@ const HomePage = () => {
     }
   };
 
-  // Handle input changes
   const handleChange = (e) => {
     setFilters({
       ...filters,
@@ -89,7 +50,6 @@ const HomePage = () => {
     });
   };
 
-  // Clear filters
   const clearFilters = async () => {
     setFilters({
       title: "",
@@ -163,7 +123,6 @@ const HomePage = () => {
         </div>
       </form>
 
-      {/* Book List */}
       {loading ? (
         <p style={{ textAlign: "center", marginTop: 20 }}>Loading...</p>
       ) : books.length > 0 ? (
@@ -175,7 +134,6 @@ const HomePage = () => {
   );
 };
 
-// Inline styles (optional — can move to CSS later)
 const styles = {
   container: {
     maxWidth: 900,
@@ -227,4 +185,3 @@ const styles = {
 };
 
 export default HomePage;
-    
