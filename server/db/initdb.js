@@ -1,23 +1,40 @@
-// Your table creation file
 import sql from './dbconn.js'
 import { connectDB } from "./dbconn.js"
 import {populateDB} from './populateDB.js'
 // =========== ENTITY SETS ==============
 
-
-// Represents the students who can issue books and the admin who have special permissions
-const createUser = async () => {
-    const users = await sql`
-    CREATE TABLE IF NOT EXISTS USERS
-    (
-      uid SERIAL, -- postgres uses SERIAL instead of AUTO_INCREMENT
+const createUsers = async () => {
+  return await sql`
+    CREATE TABLE IF NOT EXISTS USERS (
+      uid SERIAL PRIMARY KEY,
       name VARCHAR(255) NOT NULL,
+      email VARCHAR(255) UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
       books_issued INT DEFAULT 0,
       role VARCHAR(10) CHECK (role IN ('ISSUER', 'ADMIN')) DEFAULT 'ISSUER',
-      PRIMARY KEY(uid)
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `
-    return users
+}
+
+const createIssuerDetails = async () => {
+  return await sql`
+    CREATE TABLE IF NOT EXISTS ISSUER_DETAILS (
+      uid INT PRIMARY KEY REFERENCES USERS(uid) ON DELETE CASCADE,
+      max_books_allowed INT DEFAULT 5,
+      penalty_rate DECIMAL(5,2) DEFAULT 2.00
+    )
+  `
+}
+
+const createAdminDetails = async () => {
+  return await sql`
+    CREATE TABLE IF NOT EXISTS ADMIN_DETAILS (
+      uid INT PRIMARY KEY REFERENCES USERS(uid) ON DELETE CASCADE,
+      permissions JSONB DEFAULT '{"can_add_books": true, "can_delete_users": true}'
+    )
+  `
 }
 
 // A library entity -- has multiple books associated with a single library
@@ -179,6 +196,22 @@ const createReservations = async () => {
   return reservations
 }
 
+const createOtpTable = async () => {
+  return await sql`
+    CREATE TABLE IF NOT EXISTS OTP (
+      otp_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      uid INT REFERENCES USERS(uid) ON DELETE CASCADE,
+      otp_hash TEXT NOT NULL,
+      purpose VARCHAR(20) CHECK (purpose IN ('SIGNUP', 'RESET_PASSWORD')) NOT NULL,
+      expires_at TIMESTAMP NOT NULL,
+      verified BOOLEAN DEFAULT FALSE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+};
+
+
+
 // export const deleteDB = async () => {
 //     try {
 //         await sql `DROP TABLE  LIBRARY, BOOKS, ISBN, BOOK_DETAILS, CATALOG, ISSUES;`
@@ -191,7 +224,12 @@ const createReservations = async () => {
 export const initDB = async () => {
     try {
         await connectDB();
-        await createUser()
+        await createUsers()
+        await createIssuerDetails()
+        await createAdminDetails()
+        await createPasswordResets()
+        await createOtpTable()
+
         await createLibrary()
         await createISBN()
         await createBooks()
