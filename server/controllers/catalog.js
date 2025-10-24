@@ -1,8 +1,8 @@
 import sql, { connectDB } from "../db/dbconn.js";
 
-export const getCatalog = async () => {
+const getCatalog = async (req, res) => {
+  try {
     await connectDB();
-
     const catalog = await sql`
       SELECT *
       FROM CATALOG
@@ -11,73 +11,55 @@ export const getCatalog = async () => {
       JOIN ISBN ON BOOK_DETAILS.isbn_id = ISBN.isbn_id
       JOIN LIBRARY ON CATALOG.library_id = LIBRARY.library_id;
     `;
-    return catalog;
+    return res.status(200).json(catalog);
+  } catch (error) {
+    console.error("Error fetching catalog:", error);
+    return res.status(500).json({ error: "Failed to fetch catalog" });
+  }
 };
 
-
 const authorFilter = (author, conditions) => {
-  if (!author) {
-    conditions.push(sql`TRUE`);
-  } else {
+  if (author) {
     conditions.push(sql`ISBN.author ILIKE ${'%' + author + '%'}`);
   }
-  return
 };
 
 const titleFilter = (title, conditions) => {
-  if (!title) {
-    conditions.push(sql`TRUE`);
-  } else {
+  if (title) {
     conditions.push(sql`ISBN.title ILIKE ${'%' + title + '%'}`);
   }
-  return
 };
 
 const genreFilter = (genre, conditions) => {
-  if (!genre) {
-    conditions.push(sql`TRUE`);
-  } else {
+  if (genre) {
     conditions.push(sql`ISBN.genre ILIKE ${'%' + genre + '%'}`);
   }
-  return
 };
 
 const languageFilter = (language, conditions) => {
-  if (!language) {
-    conditions.push(sql`TRUE`);
-  } else {
-    conditions.push(sql`ISBN.language ILIKE ${'%' + language + '%'}`);
+  if (language) {
+    conditions.push(sql`ISBN.lang ILIKE ${'%' + language + '%'}`);
   }
-  return;
 };
 
 const docTypeFilter = (docType, conditions) => {
-  if (!docType) {
-    conditions.push(sql`TRUE`);
-  } else {
-    conditions.push(sql`ISBN.document_type ILIKE ${'%' + docType + '%'}`);
+  if (docType) {
+    conditions.push(sql`ISBN.doc_type ILIKE ${'%' + docType + '%'}`);
   }
-  return
 };
 
 const libraryFilter = (library_id, conditions) => {
-  if (!library_id) {
-    conditions.push(sql`TRUE`);
-  } else {
+  if (library_id) {
     conditions.push(sql`LIBRARY.library_id = ${library_id}`);
   }
-  return
 };
 
 const availabilityFilter = (availability, conditions) => {
-  if (!availability) {
-    conditions.push(sql`TRUE`);
-  } else if (availability === "available") {
-    conditions.push(sql`CATALOG.available_copies > 0`);
+  if (availability === "available") {
+    conditions.push(sql`BOOKS.status = 'AVAILABLE'`);
   } else if (availability === "unavailable") {
-    conditions.push(sql`CATALOG.available_copies = 0`);
+    conditions.push(sql`BOOKS.status = 'ISSUED'`);
   }
-  return;
 };
 
 const applyFilters = (q, conditions) => {
@@ -88,22 +70,26 @@ const applyFilters = (q, conditions) => {
   docTypeFilter(q.docType, conditions);
   libraryFilter(q.library_id, conditions);
   availabilityFilter(q.availability, conditions);
-  return
 };
 
-
-export const searchCatalog = async (q) => {
+const searchCatalog = async (req, res) => {
+  try {
+    const q = req.body || {};
     console.log("Search Catalog Called");
-    
     console.log("Search Query:", q);
 
-    const conditions = [sql`TRUE`]; 
+    await connectDB();
 
+    const conditions = [];
     applyFilters(q, conditions);
-    const whereClause = conditions.reduce((acc, condition, index) => {
-      if (index === 0) return condition;
-      return sql`${acc} AND ${condition}`;
-    });
+
+    // Build WHERE clause - if no conditions, select all
+    const whereClause = conditions.length > 0
+      ? conditions.reduce((acc, condition, index) => {
+          if (index === 0) return condition;
+          return sql`${acc} AND ${condition}`;
+        })
+      : sql`TRUE`;
 
     const result = await sql`
       SELECT *
@@ -114,5 +100,12 @@ export const searchCatalog = async (q) => {
       JOIN LIBRARY ON CATALOG.library_id = LIBRARY.library_id
       WHERE ${whereClause}
     `;
-    return result
-} 
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("Error searching catalog:", error);
+    return res.status(500).json({ error: "Failed to search catalog" });
+  }
+};
+
+export { getCatalog, searchCatalog };
