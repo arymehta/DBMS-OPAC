@@ -1,5 +1,13 @@
 import sql, { connectDB } from "../db/dbconn.js";
 
+// Calculate expiry date.
+const getExpirationDate = (date) => {
+  const expires_at = new Date();
+  expires_at.setDate(expires_at.getDate + date);
+  expires_at.setHours(23, 59, 59, 999);
+  return expires_at;
+}
+
 // Creates a new reservation for a given ISBN at a specific library for a user.
 const createReservation = async (req, res) => {
   try {
@@ -31,7 +39,7 @@ const createReservation = async (req, res) => {
 
       // Count total AVAILABLE physical copies in this library for this ISBN.
       const availableCopies = await sql`
-        SELECT COUNT(*) AS available
+        SELECT COUNT(*)::int AS count
         FROM BOOKS
         WHERE isbn_id = ${isbn_id}
           AND library_id = ${library_id}
@@ -40,7 +48,7 @@ const createReservation = async (req, res) => {
 
       // Count total RESERVED (active) reservations for this ISBN in this library.
       const activeReservations = await sql`
-        SELECT COUNT(*) AS reserved
+        SELECT COUNT(*)::int AS count
         FROM RESERVATIONS
         WHERE isbn_id = ${isbn_id}
           AND library_id = ${library_id}
@@ -54,33 +62,36 @@ const createReservation = async (req, res) => {
       let status = 'WAITLISTED';
       let expires_at = null;
 			
-      if (availableCopies[0].available > activeReservations[0].reserved) {
+      if (availableCopies[0].count > activeReservations[0].count) {
         status = 'RESERVED';
-        expires_at = new Date();
-				expires_at.setDate(expires_at.getDate() + EXPIRATION_DAYS);
-				expires_at.setHours(23, 59, 59, 999);
+        expires_at = getExpirationDate(EXPIRATION_DAYS);
       }
 
       // Insert new reservation.
-      const newReservation = await sql`
+      await sql`
         INSERT INTO RESERVATIONS (isbn_id, library_id, uid, status, expires_at)
         VALUES (${isbn_id}, ${library_id}, ${uid}, ${status}, ${expires_at})
-        RETURNING *;
       `;
 
-      return {
-        message: status === 'RESERVED'
-          ? "Book reserved successfully. Please collect from the library within 7 days."
-          : "All available copies are currently reserved. You have been added to the waitlist.",
-        reservation: newReservation[0],
-      };
+      return { status };
     });
 
-    res.status(200).json(result);
+    return res.status(200).json({
+      message: result.status === 'RESERVED'
+        ? "Book reserved successfully. Please collect from the library within 7 days."
+        : "All available copies are currently reserved. You have been added to the waitlist."
+    });
 
   } catch (error) {
     console.error("Error in createReservation:", error);
-    res.status(500).json({ error: error.message });
+    if (error.message.includes("already exists")) {
+      return res.status(400).json({
+        error: error.message
+      });
+    }
+    return res.status(500).json({
+      error: "internal server error"
+    });
   }
 };
 
@@ -109,46 +120,48 @@ const getReservationsByUid = async (req, res) => {
     `;
     
     if (!reservationDetails || reservationDetails.length === 0) {
-      return res.status(404).json({ message: "No reservations found for this user" });
+      return res.status(404).json({
+        message: "No reservations found for this user"
+      });
     }
     return res.status(200).json(reservationDetails);
   } catch (error) {
     console.error("Error fetching reservation details:", error);
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({
+      error: "internal server error"
+    });
   }
 };
 
 // Updates the reservation queue for a given ISBN at a given library.
-// Will be called during issues, returns, expiration/cancellation of
-// active reservations and deletion of user.
 const updateQueue = async (sql, isbn_id, library_id) => {
-  // Count available physical copies.
-  const availableCopies = await sql`
-    SELECT COUNT(*)::int AS available
+  // Count available books in library.
+  const availableBooks = await sql`
+    SELECT COUNT(*)::int AS count
     FROM BOOKS
     WHERE isbn_id = ${isbn_id}
       AND library_id = ${library_id}
       AND status = 'AVAILABLE'
   `;
 
-  // Count currently RESERVED (active) reservations.
+  // Count active reservations.
   const activeReservations = await sql`
-    SELECT COUNT(*)::int AS reserved
+    SELECT COUNT(*)::int AS count
     FROM RESERVATIONS
     WHERE isbn_id = ${isbn_id}
       AND library_id = ${library_id}
       AND status = 'RESERVED'
   `;
   
-  // Calculate how many copies are available to be reserved.
-  const availableSlots = availableCopies[0].available - activeReservations[0].reserved;
-
-	 // No copies available, nothing to update
+  // Calculate how many books are available to be reserved.
+  const availableSlots = availableBooks[0].count - activeReservations[0].count;
+  
+  // No copies available, nothing to update
   if (availableSlots <= 0) {
     return;
   }
 
-  // Fetch the oldest waitlisted reservation (FIFO logic)
+  // Fetch the oldest waitlisted reservations. (FIFO logic)
   const waitlistedReservations = await sql`
     SELECT *
     FROM RESERVATIONS
@@ -166,9 +179,7 @@ const updateQueue = async (sql, isbn_id, library_id) => {
 
   // Promote waitlisted users to RESERVED status.
   const EXPIRATION_DAYS = 7;
-  expires_at = new Date();
-	expires_at.setDate(expires_at.getDate() + EXPIRATION_DAYS);
-	expires_at.setHours(23, 59, 59, 999);
+  const expires_at = getExpirationDate(EXPIRATION_DAYS);
   
   const promotedIds = waitlistedReservations.map(r => r.reservation_id);
   
@@ -185,7 +196,7 @@ const updateQueue = async (sql, isbn_id, library_id) => {
 // Cancels a reservation, updates the reservation queue.
 const cancelReservation = async (req, res) => {
   try {
-    const { reservation_id } = req.body;
+    const { reservation_id } = req.params;
     
     if (!reservation_id) {
       return res.status(400).json({
@@ -231,9 +242,13 @@ const cancelReservation = async (req, res) => {
     console.error("Error cancelling reservation:", error);
     
     if (error.message.includes("not found")) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({
+        error: error.message
+      });
     }
-    return res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({
+      error: "Internal server error"
+    });
   }
 };
 
@@ -261,7 +276,7 @@ const cleanupExpiredReservations = async () => {
 			
 			// If expired reservations are found:
       console.log(`Found expired reservations for ${expiredReservations.length} books at various libraries`);
-
+      
       // Delete all expired reservations
       await sql`
         DELETE FROM RESERVATIONS
@@ -270,8 +285,8 @@ const cleanupExpiredReservations = async () => {
       `;
 
       console.log("Deleted expired reservations");
-
-			// Call updateQueue() for each unique (isbn_id, library_id)
+      
+      // Call updateQueue() for each unique (isbn_id, library_id)
       for (const book of expiredReservations) {
         await updateQueue(sql, book.isbn_id, book.library_id);
       }
@@ -285,10 +300,11 @@ const cleanupExpiredReservations = async () => {
   }
 };
 
-export { 
+export {
+  getExpirationDate,
 	createReservation,
 	getReservationsByUid,
 	updateQueue,
 	cancelReservation,
-	cleanupExpiredReservations
+	cleanupExpiredReservations,
 };
