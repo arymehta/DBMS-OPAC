@@ -17,10 +17,10 @@ const insertUsers = async () => {
 
 const insertLibraries = async () => {
   await sql`
-    INSERT INTO LIBRARY (name, address) VALUES
-      ('Central Library', '123 Main Street'),
-      ('City Branch', '456 Elm Street')
-    ON CONFLICT DO NOTHING;
+    INSERT INTO LIBRARY (name, street, city, state, zip_code, contact_number, email, opening_hours, closing_hours) VALUES
+      ('Central Library', '123 Main Street', 'Metropolis', 'NY', '10001', '555-1234', 'central@library.com', '09:00', '17:00'),
+      ('City Branch', '456 Elm Street', 'Metropolis', 'NY', '10002', '555-5678', 'city@library.com', '10:00', '18:00');
+    --ON CONFLICT DO NOTHING;
   `
 }
 
@@ -28,10 +28,10 @@ const insertISBNs = async () => {
   await sql`
     INSERT INTO ISBN (isbn_id, title, author, genre, publication, lang, pages, doc_type)
     VALUES
-      (9783161484100, 'The Great Gatsby', 'F. Scott Fitzgerald', 'Fiction', 'Scribner', 'English', 180, 'Hardcover'),
-      (9780439139601, 'Harry Potter and the Goblet of Fire', 'J.K. Rowling', 'Fantasy', 'Bloomsbury', 'English', 636, 'Paperback'),
-      (9780140449266, 'Meditations', 'Marcus Aurelius', 'Philosophy', 'Penguin Classics', 'English', 254, 'Paperback'),
-      (9789386538619, 'Wings of Fire', 'A.P.J. Abdul Kalam', 'Biography', 'Universities Press', 'English', 180, 'Paperback')
+      ('9783161484100', 'The Great Gatsby', 'F. Scott Fitzgerald', 'Fiction', 'Scribner', 'English', 180, 'Hardcover'),
+      ('9780439139601', 'Harry Potter and the Goblet of Fire', 'J.K. Rowling', 'Fantasy', 'Bloomsbury', 'English', 636, 'Paperback'),
+      ('9780140449266', 'Meditations', 'Marcus Aurelius', 'Philosophy', 'Penguin Classics', 'English', 254, 'Paperback'),
+      ('9789386538619', 'Wings of Fire', 'A.P.J. Abdul Kalam', 'Biography', 'Universities Press', 'English', 180, 'Paperback')
     ON CONFLICT DO NOTHING;
   `
 }
@@ -42,12 +42,12 @@ const insertISBNs = async () => {
 
 const insertBooks = async () => {
   await sql`
-    INSERT INTO BOOKS (status, dewey_dec_loc)
+    INSERT INTO BOOKS (status, dewey_dec_loc, isbn_id)
     VALUES
-      ('AVAILABLE', '823.912 FIT'),
-      ('ISSUED', '823.914 ROW'),
-      ('AVAILABLE', '188.2 AUR'),
-      ('AVAILABLE', '920 KAL')
+      ('AVAILABLE', '823.912 FIT', 9783161484100),
+      ('ISSUED', '823.914 ROW', 9780439139601),
+      ('AVAILABLE', '188.2 AUR', 9780140449266),
+      ('AVAILABLE', '920 KAL', 9789386538619)
     ON CONFLICT DO NOTHING;
   `
 }
@@ -62,16 +62,16 @@ const insertCatalog = async () => {
     ON CONFLICT DO NOTHING;
   `}
 
-const insertBookDetails = async () => {
-  await sql`
-    INSERT INTO BOOK_DETAILS (isbn_id, book_id) VALUES
-      (9783161484100, 1),
-      (9780439139601, 2),
-      (9780140449266, 3),
-      (9789386538619, 4)
-    ON CONFLICT DO NOTHING;
-  `
-}
+// const insertBookDetails = async () => {
+//   await sql`
+//     INSERT INTO BOOK_DETAILS (isbn_id, book_id) VALUES
+//       (9783161484100, 1),
+//       (9780439139601, 2),
+//       (9780140449266, 3),
+//       (9789386538619, 4)
+//     ON CONFLICT DO NOTHING;
+//   `
+// }
 
 const insertIssues = async () => {
   await sql`
@@ -85,10 +85,10 @@ const insertIssues = async () => {
 
 const insertReservations = async() => {
 	await sql`
-		INSERT INTO RESERVATIONS (book_id, library_id, uid)
+		INSERT INTO RESERVATIONS (isbn_id, library_id, uid)
 		VALUES
-			(2, 1, 2),
-			(3, 2, 3)
+			(9780439139601, 1, 2),
+			(9780140449266, 2, 3)
 		ON CONFLICT DO NOTHING;
 	`
 }
@@ -113,7 +113,7 @@ export const populateDB = async () => {
     await insertISBNs()
     await insertBooks()
     await insertCatalog()
-    await insertBookDetails()
+    // await insertBookDetails()
     await insertIssues()
     await insertFines()
     await insertReservations()
