@@ -8,12 +8,10 @@ const getBookDetailsByISBN = async (req, res) => {
 
     const bookDetails = await sql`
             SELECT *
-            FROM BOOKS
-            JOIN BOOK_DETAILS ON BOOKS.book_id = BOOK_DETAILS.book_id
-            JOIN ISBN ON BOOK_DETAILS.isbn_id = ISBN.isbn_id
+            FROM ISBN
             WHERE ISBN.isbn_id = ${id};
         `;
-
+    console.log("Book details fetched:", bookDetails);
     if (!bookDetails || bookDetails.length === 0) {
       return res.status(404).json({ message: "Book not found" });
     }
@@ -85,19 +83,12 @@ const addBookByISBN = async (req, res) => {
 
       // Create new physical book
       const bookResult = await sql`
-                                INSERT INTO BOOKS (status, dewey_dec_loc)
-                                VALUES ('AVAILABLE', ${dewey_dec_loc})
+                                INSERT INTO BOOKS (status, dewey_dec_loc, isbn_id)
+                                VALUES ('AVAILABLE', ${dewey_dec_loc}, ${isbn_id})
                                 RETURNING *;
                         `;
 
       const book_id = bookResult[0].book_id;
-
-      // Link book to ISBN
-      await sql`
-                                INSERT INTO BOOK_DETAILS (isbn_id, book_id)
-                                VALUES (${isbn_id}, ${book_id});
-                        `;
-
       // Add book to library catalog
       await sql`
                                 INSERT INTO CATALOG (library_id, book_id)

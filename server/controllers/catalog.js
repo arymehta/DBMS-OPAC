@@ -7,8 +7,7 @@ const getCatalog = async (req, res) => {
       SELECT *
       FROM CATALOG
       JOIN BOOKS ON CATALOG.book_id = BOOKS.book_id
-      JOIN BOOK_DETAILS ON BOOKS.book_id = BOOK_DETAILS.book_id
-      JOIN ISBN ON BOOK_DETAILS.isbn_id = ISBN.isbn_id
+      JOIN ISBN ON BOOKS.isbn_id = ISBN.isbn_id
       JOIN LIBRARY ON CATALOG.library_id = LIBRARY.library_id;
     `;
     return res.status(200).json(catalog);
@@ -95,8 +94,7 @@ const searchCatalog = async (req, res) => {
       SELECT *
       FROM CATALOG
       JOIN BOOKS ON CATALOG.book_id = BOOKS.book_id
-      JOIN BOOK_DETAILS ON BOOKS.book_id = BOOK_DETAILS.book_id
-      JOIN ISBN ON BOOK_DETAILS.isbn_id = ISBN.isbn_id
+      JOIN ISBN ON BOOKS.isbn_id = ISBN.isbn_id
       JOIN LIBRARY ON CATALOG.library_id = LIBRARY.library_id
       WHERE ${whereClause}
     `;
