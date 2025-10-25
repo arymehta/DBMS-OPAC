@@ -53,10 +53,12 @@ const createReservation = async (req, res) => {
       // Check and assign reservation status.
       let status = 'WAITLISTED';
       let expires_at = null;
-
+			
       if (availableCopies[0].available > activeReservations[0].reserved) {
         status = 'RESERVED';
-        expires_at = new Date(Date.now() + EXPIRATION_DAYS * 24 * 60 * 60 * 1000);
+        expires_at = new Date();
+				expires_at.setDate(expires_at.getDate() + EXPIRATION_DAYS);
+				expires_at.setHours(23, 59, 59, 999);
       }
 
       // Insert new reservation.
@@ -164,7 +166,9 @@ const updateQueue = async (sql, isbn_id, library_id) => {
 
   // Promote waitlisted users to RESERVED status.
   const EXPIRATION_DAYS = 7;
-  const expires_at = new Date(Date.now() + EXPIRATION_DAYS * 24 * 60 * 60 * 1000);
+  expires_at = new Date();
+	expires_at.setDate(expires_at.getDate() + EXPIRATION_DAYS);
+	expires_at.setHours(23, 59, 59, 999);
   
   const promotedIds = waitlistedReservations.map(r => r.reservation_id);
   
@@ -234,7 +238,7 @@ const cancelReservation = async (req, res) => {
 };
 
 // Cleanup expired reservations and update queues
-// To be called by a cron job.
+// To be called by a cron job (Once a day, maybe at 00:00).
 const cleanupExpiredReservations = async () => {
   try {
     await connectDB();
@@ -267,7 +271,7 @@ const cleanupExpiredReservations = async () => {
 
       console.log("Deleted expired reservations");
 
-      // Call updateQueue() for each unique (isbn_id, library_id)
+			// Call updateQueue() for each unique (isbn_id, library_id)
       for (const book of expiredReservations) {
         await updateQueue(sql, book.isbn_id, book.library_id);
       }
