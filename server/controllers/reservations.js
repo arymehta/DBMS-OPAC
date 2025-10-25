@@ -233,4 +233,58 @@ const cancelReservation = async (req, res) => {
   }
 };
 
-export { createReservation, getReservationsByUid, updateQueue, cancelReservation, /* (will add later) cleanupExpiredReservations*/ };
+// Cleanup expired reservations and update queues
+// To be called by a cron job.
+const cleanupExpiredReservations = async () => {
+  try {
+    await connectDB();
+    
+    await sql.begin(async (sql) => {
+    
+      // Find all expired reservations which are still marked active.
+      const expiredReservations = await sql`
+        SELECT DISTINCT isbn_id, library_id
+        FROM RESERVATIONS
+        WHERE status = 'RESERVED'
+          AND expires_at < NOW()
+      `;
+			
+			// If no expired reservations are there, nothing to do.
+      if (expiredReservations.length === 0) {
+        console.log("No expired reservations found");
+        return;
+      }
+			
+			// If expired reservations are found:
+      console.log(`Found expired reservations for ${expiredReservations.length} books at various libraries`);
+
+      // Delete all expired reservations
+      await sql`
+        DELETE FROM RESERVATIONS
+        WHERE status = 'RESERVED'
+          AND expires_at < NOW()
+      `;
+
+      console.log("Deleted expired reservations");
+
+      // Call updateQueue() for each unique (isbn_id, library_id)
+      for (const book of expiredReservations) {
+        await updateQueue(sql, book.isbn_id, book.library_id);
+      }
+
+      console.log("Queue updated");
+    });
+
+    console.log("Cleanup job completed successfully");
+  } catch (error) {
+    console.error("Error in cleanup job:", error);
+  }
+};
+
+export { 
+	createReservation,
+	getReservationsByUid,
+	updateQueue,
+	cancelReservation,
+	cleanupExpiredReservations
+};
