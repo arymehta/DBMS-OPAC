@@ -51,7 +51,7 @@ const createBooks = async () => {
       book_id SERIAL,
       status VARCHAR(10) CHECK (status IN ('ISSUED', 'AVAILABLE')) DEFAULT 'AVAILABLE',
       dewey_dec_loc VARCHAR(255),
-      isbn_id BIGINT,
+      isbn_id VARCHAR(17) NOT NULL,
       FOREIGN KEY (isbn_id) REFERENCES ISBN(isbn_id)
         ON DELETE RESTRICT
         ON UPDATE RESTRICT,
@@ -67,7 +67,7 @@ const createISBN = async () => {
     const isbns = await sql`
     CREATE TABLE IF NOT EXISTS ISBN
     (
-      isbn_id BIGINT,
+      isbn_id VARCHAR(17) NOT NULL,
       title VARCHAR(255) NOT NULL,
       author VARCHAR(255) NOT NULL,
       genre VARCHAR(255),
@@ -175,7 +175,7 @@ const createReservations = async () => {
   const reservations = await sql`
     CREATE TABLE IF NOT EXISTS RESERVATIONS (
       reservation_id SERIAL PRIMARY KEY,
-      isbn_id BIGINT NOT NULL,
+      isbn_id VARCHAR(17) NOT NULL,
       library_id INT NOT NULL,
       uid INT NOT NULL,
       reserved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

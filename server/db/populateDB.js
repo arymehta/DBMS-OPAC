@@ -28,10 +28,10 @@ const insertISBNs = async () => {
   await sql`
     INSERT INTO ISBN (isbn_id, title, author, genre, publication, lang, pages, doc_type)
     VALUES
-      (9783161484100, 'The Great Gatsby', 'F. Scott Fitzgerald', 'Fiction', 'Scribner', 'English', 180, 'Hardcover'),
-      (9780439139601, 'Harry Potter and the Goblet of Fire', 'J.K. Rowling', 'Fantasy', 'Bloomsbury', 'English', 636, 'Paperback'),
-      (9780140449266, 'Meditations', 'Marcus Aurelius', 'Philosophy', 'Penguin Classics', 'English', 254, 'Paperback'),
-      (9789386538619, 'Wings of Fire', 'A.P.J. Abdul Kalam', 'Biography', 'Universities Press', 'English', 180, 'Paperback')
+      ('9783161484100', 'The Great Gatsby', 'F. Scott Fitzgerald', 'Fiction', 'Scribner', 'English', 180, 'Hardcover'),
+      ('9780439139601', 'Harry Potter and the Goblet of Fire', 'J.K. Rowling', 'Fantasy', 'Bloomsbury', 'English', 636, 'Paperback'),
+      ('9780140449266', 'Meditations', 'Marcus Aurelius', 'Philosophy', 'Penguin Classics', 'English', 254, 'Paperback'),
+      ('9789386538619', 'Wings of Fire', 'A.P.J. Abdul Kalam', 'Biography', 'Universities Press', 'English', 180, 'Paperback')
     ON CONFLICT DO NOTHING;
   `
 }

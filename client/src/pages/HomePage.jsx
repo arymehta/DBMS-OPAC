@@ -10,9 +10,11 @@ const HomePage = () => {
     genre: "",
     publication: "",
     lang: "",
+    doc_type: "",
   });
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showOnlyAvailable, setShowOnlyAvailable] = useState(false);
   const booksPerPage = 2;
 
   useEffect(() => {
@@ -59,7 +61,9 @@ const HomePage = () => {
       genre: "",
       publication: "",
       lang: "",
+      doc_type: "",
     });
+    setShowOnlyAvailable(false);
     setCurrentPage(1);
     try {
       const response = await axios.get("http://localhost:3000/catalog/");
@@ -69,10 +73,15 @@ const HomePage = () => {
     }
   };
 
-  const totalPages = Math.ceil(books.length / booksPerPage);
+  // Filter books by availability
+  const filteredBooks = showOnlyAvailable 
+    ? books.filter(book => book.status === "AVAILABLE")
+    : books;
+
+  const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
   const indexOfLastBook = currentPage * booksPerPage;
   const indexOfFirstBook = indexOfLastBook - booksPerPage;
-  const currentBooks = books.slice(indexOfFirstBook, indexOfLastBook);
+  const currentBooks = filteredBooks.slice(indexOfFirstBook, indexOfLastBook);
 
   const goToNextPage = () => {
     if (currentPage < totalPages) {
@@ -98,12 +107,37 @@ const HomePage = () => {
       </div>
 
       {/* Filter Form */}
-        <div style={styles.filterCard}>
+      <div style={styles.filterCard}>
+        <div style={styles.filterHeader}>
           <h2 style={styles.filterTitle}>Search Filters</h2>
-          <form style={styles.filterForm} onSubmit={handleFilter}>
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Title</label>
-              <input
+          
+          {/* Availability Toggle */}
+          <div style={styles.toggleContainer}>
+            <label style={styles.toggleLabel}>
+              <span style={styles.toggleText}>Available Only</span>
+              <div 
+                style={{
+                  ...styles.toggleSwitch,
+                  ...(showOnlyAvailable ? styles.toggleSwitchActive : {})
+                }}
+                onClick={() => {
+                  setShowOnlyAvailable(!showOnlyAvailable);
+                  setCurrentPage(1);
+                }}
+              >
+                <div style={{
+                  ...styles.toggleSlider,
+                  ...(showOnlyAvailable ? styles.toggleSliderActive : {})
+                }}></div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <form style={styles.filterForm} onSubmit={handleFilter}>
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Title</label>
+            <input
               type="text"
               name="title"
               value={filters.title}
@@ -161,12 +195,24 @@ const HomePage = () => {
             />
           </div>
 
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Document Type</label>
+            <input
+              type="text"
+              name="doc_type"
+              value={filters.doc_type}
+              onChange={handleChange}
+              placeholder="Enter document type"
+              style={styles.input}
+            />
+          </div>
+
           <div style={styles.actions}>
             <button type="submit" style={styles.button}>
               🔍 Search
             </button>
             <button type="button" onClick={clearFilters} style={styles.clearButton}>
-              ✕ Clear Filters
+              ✕ Clear All
             </button>
           </div>
         </form>
@@ -179,12 +225,13 @@ const HomePage = () => {
             <div style={styles.spinner}></div>
             <p style={styles.loadingText}>Loading books...</p>
           </div>
-        ) : books.length > 0 ? (
+        ) : filteredBooks.length > 0 ? (
           <>
             <div style={styles.resultsHeader}>
               <p style={styles.resultCount}>
-                Found {books.length} book{books.length !== 1 ? 's' : ''} 
-                {totalPages > 1 && ` (Page ${currentPage} of ${totalPages})`}
+                Found {filteredBooks.length} book{filteredBooks.length !== 1 ? 's' : ''} 
+                {showOnlyAvailable && " (Available)"}
+                {totalPages > 1 && ` • Page ${currentPage} of ${totalPages}`}
               </p>
             </div>
             
@@ -235,8 +282,14 @@ const HomePage = () => {
         ) : (
           <div style={styles.emptyState}>
             <p style={styles.emptyIcon}>📖</p>
-            <p style={styles.emptyText}>No books found.</p>
-            <p style={styles.emptySubtext}>Try adjusting your search filters</p>
+            <p style={styles.emptyText}>
+              {showOnlyAvailable ? "No available books found." : "No books found."}
+            </p>
+            <p style={styles.emptySubtext}>
+              {showOnlyAvailable 
+                ? "Try turning off the 'Available Only' filter" 
+                : "Try adjusting your search filters"}
+            </p>
           </div>
         )}
       </div>
@@ -273,28 +326,77 @@ const styles = {
   filterCard: {
     backgroundColor: "#fff",
     borderRadius: 12,
-    padding: "20px",
+    padding: "24px",
     boxShadow: "0 4px 6px rgba(0, 0, 0, 0.07)",
     marginBottom: 32,
+  },
+  filterHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 24,
+    flexWrap: "wrap",
+    gap: 16,
   },
   filterTitle: {
     fontSize: "clamp(18px, 4vw, 20px)",
     color: "#2d3748",
-    marginTop: 0,
-    marginBottom: 20,
+    margin: 0,
     fontWeight: 600,
+  },
+  toggleContainer: {
+    display: "flex",
+    alignItems: "center",
+  },
+  toggleLabel: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    cursor: "pointer",
+    userSelect: "none",
+  },
+  toggleText: {
+    fontSize: 14,
+    fontWeight: 600,
+    color: "#4a5568",
+  },
+  toggleSwitch: {
+    position: "relative",
+    width: 52,
+    height: 28,
+    backgroundColor: "#cbd5e0",
+    borderRadius: 14,
+    transition: "all 0.3s ease",
+    cursor: "pointer",
+  },
+  toggleSwitchActive: {
+    backgroundColor: "#48bb78",
+  },
+  toggleSlider: {
+    position: "absolute",
+    top: 3,
+    left: 3,
+    width: 22,
+    height: 22,
+    backgroundColor: "#fff",
+    borderRadius: "50%",
+    transition: "all 0.3s ease",
+    boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+  },
+  toggleSliderActive: {
+    transform: "translateX(24px)",
   },
   filterForm: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-    gap: "16px",
+    gridTemplateColumns: "repeat(3, 1fr)",
+    gap: "20px 16px",
   },
   inputGroup: {
     display: "flex",
     flexDirection: "column",
   },
   label: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: 600,
     color: "#4a5568",
     marginBottom: 6,
@@ -302,10 +404,10 @@ const styles = {
     letterSpacing: "0.5px",
   },
   input: {
-    padding: "12px 14px",
+    padding: "11px 14px",
     border: "2px solid #e2e8f0",
     borderRadius: 8,
-    fontSize: 15,
+    fontSize: 14,
     transition: "all 0.2s ease",
     outline: "none",
     backgroundColor: "#fff",
@@ -314,40 +416,36 @@ const styles = {
   },
   actions: {
     display: "flex",
-    flexWrap: "wrap",
     gap: 12,
     gridColumn: "1 / -1",
     marginTop: 8,
     justifyContent: "center",
+    flexWrap: "wrap",
   },
   button: {
     background: "linear-gradient(135deg, #001261ff 0%, #320064ff 100%)",
     color: "#fff",
     border: "none",
-    padding: "12px 28px",
+    padding: "12px 32px",
     borderRadius: 8,
     cursor: "pointer",
     fontSize: 15,
     fontWeight: 600,
     transition: "all 0.3s ease",
     boxShadow: "0 4px 12px rgba(102, 126, 234, 0.3)",
-    flex: "1 1 auto",
     minWidth: "140px",
-    maxWidth: "200px",
   },
   clearButton: {
     background: "#fff",
     color: "#4a5568",
     border: "2px solid #e2e8f0",
-    padding: "12px 28px",
+    padding: "12px 32px",
     borderRadius: 8,
     cursor: "pointer",
     fontSize: 15,
     fontWeight: 600,
     transition: "all 0.3s ease",
-    flex: "1 1 auto",
     minWidth: "140px",
-    maxWidth: "200px",
   },
   resultsSection: {
     minHeight: 200,
@@ -470,7 +568,7 @@ styleSheet.textContent = `
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
   }
   
-  button:hover {
+  button:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4) !important;
   }
@@ -493,16 +591,15 @@ styleSheet.textContent = `
     color: #fff;
   }
   
-  /* Mobile optimizations */
-  @media (max-width: 768px) {
-    body {
-      font-size: 14px;
+  /* Responsive grid layouts */
+  @media (max-width: 1024px) {
+    form[style*="grid-template-columns"] {
+      grid-template-columns: repeat(2, 1fr) !important;
     }
   }
   
-  @media (max-width: 480px) {
-    /* Make filter inputs stack vertically on very small screens */
-    form[style*="grid"] {
+  @media (max-width: 640px) {
+    form[style*="grid-template-columns"] {
       grid-template-columns: 1fr !important;
     }
   }
