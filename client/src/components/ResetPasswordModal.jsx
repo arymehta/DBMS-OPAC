@@ -1,18 +1,44 @@
-import { useState } from 'react';
-import { X, Eye, EyeOff } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Loader } from 'lucide-react';
 import { BACKEND_URL } from '../config';
 
-const ResetPasswordModal = ({ isOpen, onClose, email, otp }) => {
+const ResetPasswordModal = ({ isOpen, onClose, email, onSuccess }) => {
+  const [step, setStep] = useState('otp');
+  const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
 
-  const handleReset = async () => {
-    if (!newPassword || !confirmPassword) {
-      setError('Please fill in all fields');
+  React.useEffect(() => {
+    if (resendTimer > 0) {
+      const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendTimer]);
+
+  const handleVerifyOtp = async () => {
+    if (!otp.trim()) {
+      setError('Please enter OTP');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      setStep('password');
+      setLoading(false);
+    } catch (err) {
+      setError('Failed to verify OTP');
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!newPassword.trim()) {
+      setError('Please enter new password');
       return;
     }
 
@@ -21,104 +47,157 @@ const ResetPasswordModal = ({ isOpen, onClose, email, otp }) => {
       return;
     }
 
-    if (newPassword.length < 8) {
-      setError('Password must be at least 8 characters');
+    if (newPassword.length < 6) {
+      setError('Password must be at least 6 characters');
       return;
     }
 
-    setSubmitting(true);
+    setLoading(true);
     setError('');
 
     try {
-      const res = await fetch(`${BACKEND_URL}/auth/reset-password/confirm`, {
+      const response = await fetch(`${BACKEND_URL}/auth/reset-password/confirm`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp, newPassword })
       });
 
-      const data = await res.json();
+      const data = await response.json();
 
-      if (res.ok) {
-        setSuccess(data.message);
-        setTimeout(() => onClose(), 2000);
+      if (response.ok) {
+        onSuccess();
+        onClose();
       } else {
-        setError(data.message || 'Error resetting password');
+        setError(data.message || 'Failed to reset password');
       }
     } catch (err) {
-      setError('Error resetting password');
+      setError('Failed to reset password. Please try again.');
+      console.error(err);
     } finally {
-      setSubmitting(false);
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/auth/resend-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, purpose: 'RESET_PASSWORD' })
+      });
+
+      if (response.ok) {
+        setResendTimer(60);
+      } else {
+        setError('Failed to resend OTP');
+      }
+    } catch (err) {
+      setError('Failed to resend OTP');
+    } finally {
+      setLoading(false);
     }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-2xl p-8 w-full max-w-md shadow-2xl">
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-white">Set New Password</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Reset Password</h2>
           <button
             onClick={onClose}
-            disabled={submitting}
-            className="text-slate-400 hover:text-white transition disabled:opacity-50"
+            className="text-gray-400 hover:text-gray-600"
           >
             <X size={24} />
           </button>
         </div>
 
-        <div className="mb-4 relative">
-          <label className="block text-sm font-medium text-slate-300 mb-2">New Password</label>
-          <div className="relative">
+        {step === 'otp' && (
+          <>
+            <p className="text-gray-600 mb-6">
+              Enter the OTP sent to <span className="font-semibold">{email}</span>
+            </p>
+
             <input
-              type={showPassword ? 'text' : 'password'}
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              disabled={submitting}
-              placeholder="Enter new password"
-              className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition disabled:opacity-50 pr-10"
+              type="text"
+              placeholder="Enter 6-digit OTP"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              maxLength="6"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg mb-4 text-center text-2xl tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+
+            {error && (
+              <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
+            )}
+
             <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-3 text-slate-400 hover:text-white"
+              onClick={handleVerifyOtp}
+              disabled={loading || otp.length !== 6}
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
             >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              {loading && <Loader size={20} className="animate-spin" />}
+              Verify OTP
             </button>
-          </div>
-        </div>
 
-        <div className="mb-6 relative">
-          <label className="block text-sm font-medium text-slate-300 mb-2">Confirm Password</label>
-          <input
-            type={showPassword ? 'text' : 'password'}
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            disabled={submitting}
-            placeholder="Confirm password"
-            className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition disabled:opacity-50"
-          />
-        </div>
-
-        {error && (
-          <div className="mb-4 p-4 bg-red-500/10 border border-red-500/50 rounded-lg">
-            <p className="text-red-400 text-sm">{error}</p>
-          </div>
+            <button
+              onClick={handleResendOtp}
+              disabled={resendTimer > 0 || loading}
+              className="w-full mt-3 text-blue-600 hover:text-blue-700 disabled:text-gray-400 font-semibold py-2 transition"
+            >
+              {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : 'Resend OTP'}
+            </button>
+          </>
         )}
 
-        {success && (
-          <div className="mb-4 p-4 bg-green-500/10 border border-green-500/50 rounded-lg">
-            <p className="text-green-400 text-sm">{success}</p>
-          </div>
-        )}
+        {step === 'password' && (
+          <>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  placeholder="Enter new password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
 
-        <button
-          onClick={handleReset}
-          disabled={submitting}
-          className="w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {submitting ? 'Resetting...' : 'Reset Password'}
-        </button>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Confirm Password
+                </label>
+                <input
+                  type="password"
+                  placeholder="Confirm password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {error && (
+                <p className="text-red-500 text-sm text-center">{error}</p>
+              )}
+
+              <button
+                onClick={handleResetPassword}
+                disabled={loading || !newPassword || !confirmPassword}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
+              >
+                {loading && <Loader size={20} className="animate-spin" />}
+                Reset Password
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

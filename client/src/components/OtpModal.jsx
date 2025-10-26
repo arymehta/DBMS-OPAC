@@ -1,143 +1,126 @@
-import { useState, useEffect } from 'react';
-import { X, Clock } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Loader } from 'lucide-react';
 import { BACKEND_URL } from '../config';
 
-const OtpModal = ({ isOpen, onClose, email, purpose, onSuccess, isLoading }) => {
+const OtpModal = ({ isOpen, onClose, email, purpose, onSuccess }) => {
   const [otp, setOtp] = useState('');
-  const [timer, setTimer] = useState(0);
-  const [canResend, setCanResend] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
 
   useEffect(() => {
-    if (isOpen && timer === 0) {
-      setTimer(300);
+    if (resendTimer > 0) {
+      const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
+      return () => clearTimeout(timer);
     }
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (timer > 0) {
-      const interval = setInterval(() => setTimer(t => t - 1), 1000);
-      return () => clearInterval(interval);
-    } else if (timer === 0 && isOpen) {
-      setCanResend(true);
-    }
-  }, [timer, isOpen]);
+  }, [resendTimer]);
 
   const handleVerifyOtp = async () => {
-    if (!otp || otp.length !== 6) {
-      setError('Please enter a valid 6-digit OTP');
+    if (!otp.trim()) {
+      setError('Please enter OTP');
       return;
     }
 
-    setSubmitting(true);
+    setLoading(true);
     setError('');
 
     try {
-      const res = await fetch(`${BACKEND_URL}/auth/verify-otp`, {
+      const response = await fetch(`${BACKEND_URL}/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp, purpose })
       });
 
-      const data = await res.json();
+      const data = await response.json();
 
-      if (res.ok) {
+      if (response.ok) {
         onSuccess(data);
+        onClose();
       } else {
         setError(data.message || 'Invalid OTP');
       }
     } catch (err) {
-      setError('Error verifying OTP');
+      setError('Failed to verify OTP. Please try again.');
+      console.error(err);
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
 
   const handleResendOtp = async () => {
-    setCanResend(false);
-    setTimer(300);
+    setLoading(true);
     setError('');
 
     try {
-      const res = await fetch(`${BACKEND_URL}/auth/resend-otp`, {
+      const response = await fetch(`${BACKEND_URL}/auth/resend-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, purpose })
       });
 
-      const data = await res.json();
-      if (!res.ok) setError(data.message || 'Error resending OTP');
+      const data = await response.json();
+
+      if (response.ok) {
+        setResendTimer(60);
+        setError('');
+      } else {
+        setError(data.message || 'Failed to resend OTP');
+      }
     } catch (err) {
-      setError('Error resending OTP');
+      setError('Failed to resend OTP. Please try again.');
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
   if (!isOpen) return null;
 
-  const minutes = Math.floor(timer / 60);
-  const seconds = timer % 60;
-
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-2xl p-8 w-full max-w-md shadow-2xl">
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-white">Verify OTP</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Verify OTP</h2>
           <button
             onClick={onClose}
-            disabled={submitting || isLoading}
-            className="text-slate-400 hover:text-white transition disabled:opacity-50"
+            className="text-gray-400 hover:text-gray-600"
           >
             <X size={24} />
           </button>
         </div>
 
-        <p className="text-slate-400 mb-6">Enter the OTP sent to {email}</p>
+        <p className="text-gray-600 mb-6">
+          Enter the OTP sent to <span className="font-semibold">{email}</span>
+        </p>
 
-        <div className="mb-6">
-          <input
-            type="text"
-            maxLength="6"
-            placeholder="000000"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-            disabled={submitting || isLoading}
-            className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-2xl text-center tracking-widest placeholder-slate-500 focus:outline-none focus:border-blue-500 transition disabled:opacity-50"
-          />
-        </div>
-
-        <div className="flex items-center justify-between mb-6 text-sm">
-          <div className="flex items-center space-x-2 text-slate-400">
-            <Clock size={16} />
-            <span>
-              {minutes}:{seconds.toString().padStart(2, '0')} remaining
-            </span>
-          </div>
-          {canResend ? (
-            <button
-              onClick={handleResendOtp}
-              disabled={submitting || isLoading}
-              className="text-blue-400 hover:text-blue-300 font-medium transition disabled:opacity-50"
-            >
-              Resend OTP
-            </button>
-          ) : (
-            <span className="text-slate-500">Resend in {minutes}:{seconds.toString().padStart(2, '0')}</span>
-          )}
-        </div>
+        <input
+          type="text"
+          placeholder="Enter 6-digit OTP"
+          value={otp}
+          onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+          maxLength="6"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg mb-4 text-center text-2xl tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
 
         {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/50 rounded-lg">
-            <p className="text-red-400 text-sm">{error}</p>
-          </div>
+          <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
         )}
 
         <button
           onClick={handleVerifyOtp}
-          disabled={submitting || isLoading || otp.length !== 6}
-          className="w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={loading || otp.length !== 6}
+          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
         >
-          {submitting || isLoading ? 'Verifying...' : 'Verify OTP'}
+          {loading && <Loader size={20} className="animate-spin" />}
+          Verify OTP
+        </button>
+
+        <button
+          onClick={handleResendOtp}
+          disabled={resendTimer > 0 || loading}
+          className="w-full mt-3 text-blue-600 hover:text-blue-700 disabled:text-gray-400 font-semibold py-2 transition"
+        >
+          {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : 'Resend OTP'}
         </button>
       </div>
     </div>

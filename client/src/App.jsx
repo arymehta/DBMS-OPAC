@@ -1,22 +1,37 @@
+import './App.css'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import HomePage from './pages/HomePage';
-import CandidateLogin from './components/CandidateLogin';
-import CandidateSignup from './components/CandidateSignup';
-import AdminLogin from './components/AdminLogin';
+import Sidebar from './components/Sidebar';
+import Landing from './pages/Landing';
+import CandidateAuth from './pages/CandidateAuth';
+import AdminAuth from './pages/AdminAuth';
 import useAuthContext from './hooks/useAuthContext';
 import DashboardPage from './pages/DashboardPage';
 
 function App() {
   const { state } = useAuthContext();
+  const { isAuthenticated, user, loading } = state;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-50">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 font-semibold">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   const ProtectedRoute = ({ element, requiredRole }) => {
-    if (!state.isAuthenticated) {
-      return <Navigate to="/candidate-login" replace />;
+    if (!isAuthenticated) {
+      return <Navigate to="/" replace />;
     }
 
-    if (requiredRole && state.user.role !== requiredRole) {
-      if (state.user.role === 'ISSUER') {
+    if (requiredRole && user.role !== requiredRole) {
+      if (user.role === 'ISSUER') {
         return <Navigate to="/issuer-home" replace />;
+      } else if (user.role === 'ADMIN') {
+        return <Navigate to="/admin-home" replace />;
       }
       return <Navigate to="/" replace />;
     }
@@ -25,10 +40,10 @@ function App() {
   };
 
   const AuthRoute = ({ element }) => {
-    if (state.isAuthenticated) {
-      if (state.user.role === 'ISSUER') {
+    if (isAuthenticated) {
+      if (user.role === 'ISSUER') {
         return <Navigate to="/issuer-home" replace />;
-      } else if (state.user.role === 'ADMIN') {
+      } else if (user.role === 'ADMIN') {
         return <Navigate to="/admin-home" replace />;
       }
     }
@@ -37,15 +52,20 @@ function App() {
 
   return (
     <>
+      <Sidebar />
       <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/candidate-login" element={<AuthRoute element={<CandidateLogin />} />} />
-        <Route path="/candidate-signup" element={<AuthRoute element={<CandidateSignup />} />} />
-        <Route path="/admin-login" element={<AuthRoute element={<AdminLogin />} />} />
-
-        <Route path="/issuer-home" element={<ProtectedRoute element={<DashboardPage />} requiredRole="ISSUER" />} />
-        <Route path="/admin-home" element={<ProtectedRoute element={<div>Admin Home</div>} requiredRole="ADMIN" />} />
-        <Route path="/dashboard" element={<ProtectedRoute element={<DashboardPage />} requiredRole="ISSUER" />} />
+        <Route path="/" element={<Landing />} />
+        <Route path="/candidate-auth" element={<AuthRoute element={<CandidateAuth />} />} />
+        <Route path="/admin-auth" element={<AuthRoute element={<AdminAuth />} />} />
+        
+        <Route
+          path="/issuer-home"
+          element={<ProtectedRoute element={<DashboardPage />} requiredRole="ISSUER" />}
+        />
+        <Route
+          path="/admin-home"
+          element={<ProtectedRoute element={<div>Admin Home</div>} requiredRole="ADMIN" />}
+        />
       </Routes>
     </>
   );

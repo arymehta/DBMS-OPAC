@@ -90,7 +90,7 @@ const CandidateLogin = () => {
   };
 
   return (
-    <AuthLayout title="Candidate Login" subtitle="Welcome back to OPAC you">
+    <AuthLayout title="Candidate Login" subtitle="Welcome back to OPAC">
       <form onSubmit={handleLogin} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-slate-300 mb-2">Email</label>

@@ -49,7 +49,7 @@ const AdminLogin = () => {
   };
 
   return (
-    <AuthLayout title="Admin Login" subtitle="Access OPAC you Admin Panel">
+    <AuthLayout title="Admin Login" subtitle="Access OPAC Admin Panel">
       <form onSubmit={handleLogin} className="space-y-4">
         <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/50 rounded-lg">
           <p className="text-blue-400 text-sm">Admin credentials required for access</p>

@@ -6,7 +6,7 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid md:grid-cols-4 gap-8 mb-8">
           <div>
-            <h3 className="text-lg font-bold text-white mb-4">OPAC you</h3>
+            <h3 className="text-lg font-bold text-white mb-4">OPAC</h3>
             <p className="text-slate-400">Professional credential management platform</p>
           </div>
           <div>
@@ -35,7 +35,7 @@ const Footer = () => {
           </div>
         </div>
         <div className="border-t border-slate-700 pt-8 text-center text-slate-400">
-          <p>&copy; 2024 OPAC you. All rights reserved.</p>
+          <p>&copy; 2024 OPAC All rights reserved.</p>
         </div>
       </div>
     </footer>
