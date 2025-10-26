@@ -45,7 +45,14 @@ const createLibrary = async () => {
     (
       library_id SERIAL,
       name VARCHAR(255) NOT NULL,
-      address VARCHAR(255) NOT NULL,
+      street VARCHAR(255),
+      city VARCHAR(255),
+      state VARCHAR(255),
+      zip_code VARCHAR(20),
+      contact_number VARCHAR(20),
+      email VARCHAR(255),
+      opening_hours VARCHAR(255),
+      closing_hours VARCHAR(255),
       PRIMARY KEY(library_id)
     )
   `
@@ -61,6 +68,10 @@ const createBooks = async () => {
       book_id SERIAL,
       status VARCHAR(10) CHECK (status IN ('ISSUED', 'AVAILABLE')) DEFAULT 'AVAILABLE',
       dewey_dec_loc VARCHAR(255),
+      isbn_id VARCHAR(17) NOT NULL,
+      FOREIGN KEY (isbn_id) REFERENCES ISBN(isbn_id)
+        ON DELETE RESTRICT
+        ON UPDATE RESTRICT,
       PRIMARY KEY(book_id)
     )
   `
@@ -73,7 +84,7 @@ const createISBN = async () => {
     const isbns = await sql`
     CREATE TABLE IF NOT EXISTS ISBN
     (
-      isbn_id BIGINT,
+      isbn_id VARCHAR(17) NOT NULL,
       title VARCHAR(255) NOT NULL,
       author VARCHAR(255) NOT NULL,
       genre VARCHAR(255),
@@ -129,23 +140,23 @@ const createCatalog = async () => {
 }
 
 // One-many relation that relating Books(Physical copy) to ISBN number
-const createBookDetails = async () => {
-    const bookDetails = await sql`
-    CREATE TABLE IF NOT EXISTS BOOK_DETAILS
-    (
-      isbn_id BIGINT NOT NULL,
-      book_id INT NOT NULL,
-      PRIMARY KEY(book_id),
-      FOREIGN KEY (isbn_id) REFERENCES ISBN(isbn_id)
-        ON DELETE CASCADE
-        ON UPDATE RESTRICT,
-      FOREIGN KEY (book_id) REFERENCES BOOKS(book_id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE
-    )
-  `
-    return bookDetails
-}
+// const createBookDetails = async () => {
+//     const bookDetails = await sql`
+//     CREATE TABLE IF NOT EXISTS BOOK_DETAILS
+//     (
+//       isbn_id BIGINT NOT NULL,
+//       book_id INT NOT NULL,
+//       PRIMARY KEY(book_id),
+//       FOREIGN KEY (isbn_id) REFERENCES ISBN(isbn_id)
+//         ON DELETE CASCADE
+//         ON UPDATE RESTRICT,
+//       FOREIGN KEY (book_id) REFERENCES BOOKS(book_id)
+//         ON DELETE CASCADE
+//         ON UPDATE CASCADE
+//     )
+//   `
+//     return bookDetails
+// }
 
 // Every issue is associated with a unique entry of catalog
 const createIssues = async () => {
@@ -181,14 +192,17 @@ const createReservations = async () => {
   const reservations = await sql`
     CREATE TABLE IF NOT EXISTS RESERVATIONS (
       reservation_id SERIAL PRIMARY KEY,
-      book_id INT NOT NULL,
+      isbn_id VARCHAR(17) NOT NULL,
       library_id INT NOT NULL,
       uid INT NOT NULL,
       reserved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       status VARCHAR(10) CHECK (status IN ('ACTIVE', 'CANCELLED', 'ISSUED')) DEFAULT 'ACTIVE',
-      FOREIGN KEY(book_id, library_id) REFERENCES CATALOG(book_id, library_id)
+      FOREIGN KEY(isbn_id) REFERENCES ISBN(isbn_id)
         ON UPDATE CASCADE
-        ON DELETE CASCADE,
+        ON DELETE RESTRICT,
+      FOREIGN KEY(library_id) REFERENCES LIBRARY(library_id)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
       FOREIGN KEY(uid) REFERENCES USERS(uid)
         ON UPDATE CASCADE
         ON DELETE RESTRICT
@@ -227,9 +241,9 @@ const checkIfTablesExist = async () => {
     SELECT COUNT(*) as table_count 
     FROM information_schema.tables 
     WHERE table_schema = 'public' 
-    AND table_name IN ('users', 'library', 'isbn', 'books', 'catalog', 'book_details', 'issues', 'reservations', 'fine')
+    AND table_name IN ('users', 'library', 'isbn', 'books', 'catalog', 'issues', 'reservations', 'fine')
   `;
-  return parseInt(result[0].table_count) === 9; //i have hardcoded 9 tables, maybe change later
+  return parseInt(result[0].table_count) === 8; //i have hardcoded 8 tables, maybe change later
 };
 
 const checkIfDataExists = async () => {
@@ -266,7 +280,7 @@ export const initDB = async () => {
       await createISBN()
       await createBooks()
       await createCatalog()
-      await createBookDetails()
+      // await createBookDetails()
       await createIssues()
       await createReservations()
       await createFine()
@@ -276,6 +290,7 @@ export const initDB = async () => {
       console.log("Populating database with initial data...");
       await populateDB()
     }
+    
     
     console.log("DB initialized successfully")
   } catch (error) {

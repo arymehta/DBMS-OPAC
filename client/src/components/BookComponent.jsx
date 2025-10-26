@@ -1,32 +1,34 @@
 import React from "react";
-import { faCheck } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 const styles = {
     card: {
-        border: "1px solid #e0e0e0",
-        borderRadius: 8,
-        padding: 20,
-        maxWidth: 750,
+        border: "1px solid #e2e8f0",
+        borderRadius: 12,
+        padding: "24px",
+        maxWidth: "60%",
         background: "#fff",
-        boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
-        fontFamily: "Arial, sans-serif",
+        boxShadow: "0 4px 6px rgba(0,0,0,0.07)",
+        fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
         margin: "16px auto",
+        transition: "all 0.3s ease",
     },
     headerRow: {
         display: "flex",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        marginBottom: 16,
-        gap: 20,
+        flexDirection: "row",
+        gap: "24px",
+        marginBottom: 20,
+        maxWidth: "100%",
     },
     imageContainer: {
         flexShrink: 0,
         width: 140,
         height: 200,
-        borderRadius: 6,
+        borderRadius: 8,
         overflow: "hidden",
-        boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+        backgroundColor: "#f7fafc",
     },
     bookImage: {
         width: "100%",
@@ -37,68 +39,99 @@ const styles = {
         flex: 1,
         display: "flex",
         flexDirection: "column",
+        minWidth: 0,
     },
-    title: { margin: 0, fontSize: 22, color: "#111" },
-    subtitle: { margin: "6px 0 14px", color: "#555", fontSize: 14 },
+    title: {
+        margin: 0,
+        fontSize: "clamp(18px, 4vw, 22px)",
+        color: "#1a202c",
+        fontWeight: 700,
+        lineHeight: 1.3,
+        marginBottom: 8,
+    },
+    subtitle: {
+        margin: 0,
+        color: "#718096",
+        fontSize: "clamp(13px, 3vw, 14px)",
+        marginBottom: 16,
+        fontWeight: 500,
+    },
     metaContainer: {
         display: "grid",
-        gridTemplateColumns: "repeat(2, minmax(160px, 1fr))",
-        gap: 10,
+        gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+        gap: "12px",
     },
     field: {
         display: "flex",
         flexDirection: "column",
-        padding: "4px 0",
+        padding: "4px 6px",
+        backgroundColor: "#f7fafc",
+        borderRadius: 6,
+        border: "1px solid #e2e8f0",
     },
     label: {
-        color: "#777",
-        fontSize: 13,
-        marginBottom: 2,
+        color: "#4a5568",
+        fontSize: 11,
+        marginBottom: 4,
+        textTransform: "uppercase",
+        letterSpacing: "0.5px",
+        fontWeight: 600,
     },
     value: {
-        color: "#111",
+        color: "#2d3748",
         fontWeight: 500,
-        fontSize: 14,
+        fontSize: "clamp(13px, 3vw, 14px)",
         lineHeight: 1.4,
+        wordBreak: "break-word",
     },
     actions: {
         display: "flex",
         alignItems: "center",
-        justifyContent: "space-around",
+        justifyContent: "space-between",
         marginTop: 20,
+        paddingTop: 20,
+        borderTop: "1px solid #e2e8f0",
+        gap: 16,
+        flexWrap: "wrap",
     },
     button: {
-        background: "#1976d2",
+        background: "linear-gradient(135deg, #001261ff 0%, #320064ff 100%)",
         color: "#fff",
         border: "none",
-        padding: "8px 14px",
-        borderRadius: 4,
+        padding: "12px 24px",
+        borderRadius: 8,
         cursor: "pointer",
-        fontSize: 14,
-        fontWeight: 500,
+        fontSize: "clamp(14px, 3vw, 15px)",
+        fontWeight: 600,
+        transition: "all 0.3s ease",
+        boxShadow: "0 4px 12px rgba(102, 126, 234, 0.3)",
+        flex: "1 1 auto",
+        minWidth: "140px",
+        maxWidth: "200px",
     },
-    status: {
-        display: "flex",
+    statusBadge: {
+        display: "inline-flex",
         alignItems: "center",
-        gap: 6,
-        fontSize: 14,
+        gap: 8,
+        padding: "8px 16px",
+        borderRadius: 20,
+        fontSize: "clamp(13px, 3vw, 14px)",
+        fontWeight: 600,
+        whiteSpace: "nowrap",
+    },
+    availableBadge: {
+        backgroundColor: "#d4edda",
+        color: "#155724",
+        border: "1px solid #c3e6cb",
+    },
+    unavailableBadge: {
+        backgroundColor: "#f8d7da",
+        color: "#721c24",
+        border: "1px solid #f5c6cb",
     },
 };
 
-const dummyBook = {
-    isbn_id: 9780131103627,
-    title: "The C Programming Language",
-    author: "Brian W. Kernighan",
-    genre: "Programming",
-    publication: "Prentice Hall",
-    lang: "English",
-    pages: 272,
-    doc_type: "Hardcover",
-    status: "AVAILABLE",
-    dewey_dec_loc: "005.13 KER",
-};
-
-const BookComponent = () => {
+const BookComponent = ({ book }) => {
     const {
         isbn_id,
         title,
@@ -110,29 +143,32 @@ const BookComponent = () => {
         doc_type,
         status,
         dewey_dec_loc,
-    } = dummyBook;
+    } = book;
 
     const url = `https://covers.openlibrary.org/b/isbn/${isbn_id}-M.jpg`;
+    const isAvailable = status === "AVAILABLE";
 
     return (
-        <div style={styles.card} data-testid="book-component">
-            <div style={styles.headerRow}>
-                {/* Left: Book Image */}
+        <div style={styles.card} data-testid="book-component" className="book-card">
+            <div style={styles.headerRow} className="book-header">
+                {/* Book Image */}
                 <div style={styles.imageContainer}>
-                    <img src={url} alt={title} style={styles.bookImage} />
+                    <img 
+                        src={url} 
+                        alt={title} 
+                        style={styles.bookImage}
+                        onError={(e) => {
+                            e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 200"%3E%3Crect fill="%23e2e8f0" width="140" height="200"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%234a5568" font-family="Arial" font-size="14"%3ENo Cover%3C/text%3E%3C/svg%3E';
+                        }}
+                    />
                 </div>
 
-                {/* Right: Title, Author, and Details */}
+                {/* Book Details */}
                 <div style={styles.textContainer}>
                     <h2 style={styles.title}>{title || "Untitled"}</h2>
-                    <div style={styles.subtitle}>by {author || "Unknown author"}</div>
+                    <div style={styles.subtitle}>by {author || "Unknown Author"}</div>
 
                     <div style={styles.metaContainer}>
-                        <div style={styles.field}>
-                            <div style={styles.label}>ISBN</div>
-                            <div style={styles.value}>{isbn_id ?? "N/A"}</div>
-                        </div>
-
                         <div style={styles.field}>
                             <div style={styles.label}>Genre</div>
                             <div style={styles.value}>{genre || "N/A"}</div>
@@ -149,44 +185,87 @@ const BookComponent = () => {
                         </div>
 
                         <div style={styles.field}>
-                            <div style={styles.label}>Pages</div>
-                            <div style={styles.value}>{pages || "N/A"}</div>
-                        </div>
-
-                        <div style={styles.field}>
                             <div style={styles.label}>Document Type</div>
                             <div style={styles.value}>{doc_type || "N/A"}</div>
                         </div>
-
-                        <div style={styles.field}>
-                            <div style={styles.label}>Dewey Decimal</div>
-                            <div style={styles.value}>{dewey_dec_loc || "N/A"}</div>
-                        </div>
                     </div>
-                </div>
-            </div>
-
-            {/* Bottom Actions */}
+                     {/* Actions Row */}
             <div style={styles.actions}>
                 <div
                     style={{
-                        ...styles.status,
-                        color: status === "AVAILABLE" ? "green" : "red",
+                        ...styles.statusBadge,
+                        ...(isAvailable ? styles.availableBadge : styles.unavailableBadge),
                     }}
                 >
-                    {status === "AVAILABLE" ? (
-                        <>
-                            <FontAwesomeIcon icon={faCheck} />
-                            Available
-                        </>
-                    ) : (
-                        "Not Available"
-                    )}
+                    <FontAwesomeIcon icon={isAvailable ? faCheck : faXmark} />
+                    {isAvailable ? "Available Now" : "Not Available"}
                 </div>
-                <button style={styles.button}>Issue Book</button>
+                <button style={styles.button} className="reserve-btn">
+                    Reserve Book
+                </button>
             </div>
+                </div>
+            </div>
+
+           
         </div>
     );
 };
+
+// Add responsive styles and hover effects
+if (typeof document !== 'undefined') {
+    const styleSheet = document.createElement("style");
+    styleSheet.textContent = `
+        .book-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1) !important;
+        }
+        
+        .reserve-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5) !important;
+        }
+        
+        .reserve-btn:active {
+            transform: translateY(0);
+        }
+        
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .book-card {
+                max-width: 100% !important;
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .book-header {
+                flex-direction: column !important;
+                align-items: center !important;
+            }
+            
+            .book-card {
+                padding: 16px !important;
+            }
+                .book-card {
+                max-width: 100% !important;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .book-header > div:first-child {
+                width: 120px !important;
+                height: 172px !important;
+            }
+                .book-card {
+                max-width: 100% !important;
+            }
+        }
+    `;
+    
+    if (!document.head.querySelector('style[data-book-component]')) {
+        styleSheet.setAttribute('data-book-component', 'true');
+        document.head.appendChild(styleSheet);
+    }
+}
 
 export default BookComponent;
