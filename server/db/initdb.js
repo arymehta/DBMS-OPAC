@@ -1,6 +1,6 @@
 import sql from './dbconn.js'
 import { connectDB } from "./dbconn.js"
-import {populateDB} from './populateDB.js'
+import { populateDB } from './populateDB.js'
 
 // =========== ENTITY SETS ==============
 
@@ -11,6 +11,7 @@ const createUsers = async () => {
       name VARCHAR(255) NOT NULL,
       email VARCHAR(255) UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
+      is_verified BOOLEAN DEFAULT FALSE,
       books_issued INT DEFAULT 0,
       role VARCHAR(10) CHECK (role IN ('ISSUER', 'ADMIN')) DEFAULT 'ISSUER',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -40,7 +41,7 @@ const createAdminDetails = async () => {
 
 // A library entity -- has multiple books associated with a single library
 const createLibrary = async () => {
-    const libraries = await sql`
+  const libraries = await sql`
     CREATE TABLE IF NOT EXISTS LIBRARY
     (
       library_id SERIAL,
@@ -56,13 +57,13 @@ const createLibrary = async () => {
       PRIMARY KEY(library_id)
     )
   `
-    return libraries
+  return libraries
 }
 
 
 // Represents a physical copy of a book, associated with a SINGLE LIBRARY
 const createBooks = async () => {
-    const books = await sql`
+  const books = await sql`
     CREATE TABLE IF NOT EXISTS BOOKS
     (
       book_id SERIAL,
@@ -75,13 +76,13 @@ const createBooks = async () => {
       PRIMARY KEY(book_id)
     )
   `
-    return books
+  return books
 }
 
 
 // Common information associated to each physical copy of a book stored in this entity set
 const createISBN = async () => {
-    const isbns = await sql`
+  const isbns = await sql`
     CREATE TABLE IF NOT EXISTS ISBN
     (
       isbn_id VARCHAR(17) NOT NULL,
@@ -95,11 +96,11 @@ const createISBN = async () => {
       PRIMARY KEY(isbn_id)
     )
   `
-    return isbns
+  return isbns
 }
 
 const createFine = async () => {
-    const fines = await sql`
+  const fines = await sql`
     CREATE TABLE IF NOT EXISTS FINE
     (
       fine_id SERIAL,
@@ -114,7 +115,7 @@ const createFine = async () => {
       PRIMARY KEY(fine_id)
     )
   `
-    return fines
+  return fines
 }
 
 // =========== RELATION SCHEMAS ==============
@@ -122,7 +123,7 @@ const createFine = async () => {
 // One-many relation between book and library!
 // Here primary key is kept only book because a SINGULAR BOOK CANNOT BELONG TO MULTIPLE LIBRARIES
 const createCatalog = async () => {
-    const catalog = await sql`
+  const catalog = await sql`
     CREATE TABLE IF NOT EXISTS CATALOG
     (
       library_id INT NOT NULL,
@@ -136,7 +137,7 @@ const createCatalog = async () => {
       PRIMARY KEY(book_id, library_id)
     )
   `
-    return catalog
+  return catalog
 }
 
 // One-many relation that relating Books(Physical copy) to ISBN number
@@ -160,7 +161,7 @@ const createCatalog = async () => {
 
 // Every issue is associated with a unique entry of catalog
 const createIssues = async () => {
-    const issues = await sql`
+  const issues = await sql`
     CREATE TABLE IF NOT EXISTS ISSUES
     (
       issue_id SERIAL,
@@ -184,7 +185,7 @@ const createIssues = async () => {
       PRIMARY KEY(issue_id)
     )
   `
-    return issues
+  return issues
 }
 
 // Users can reserve books (first-come, first-served)
@@ -251,7 +252,7 @@ const checkIfDataExists = async () => {
     const result = await sql`SELECT COUNT(*) as user_count FROM users LIMIT 1`;
     return parseInt(result[0].user_count) > 0;
   } catch (error) {
-    return false; 
+    return false;
   }
 };
 
@@ -262,39 +263,39 @@ export const initDB = async () => {
     // no need to create tables or populate if they already exist
     const tablesExist = await checkIfTablesExist();
     const dataExists = await checkIfDataExists();
-    
-    if (tablesExist && dataExists) {
-      console.log("DB already initialized with data, skipping...");
-      return;
-    }
-    
-    if (!tablesExist) {
-      console.log("Creating database tables...");
-      await createUsers()
-        await createIssuerDetails()
-        await createAdminDetails()
-        await createPasswordResets()
-        await createOtpTable()
 
-      await createLibrary()
-      await createISBN()
-      await createBooks()
-      await createCatalog()
-      // await createBookDetails()
-      await createIssues()
-      await createReservations()
-      await createFine()
-    }
-    
+    // if (tablesExist && dataExists) {
+    //   console.log("DB already initialized with data, skipping...");
+    //   return;
+    // }
+
+    // if (!tablesExist) {
+    console.log("Creating database tables...");
+    await createUsers()
+    await createIssuerDetails()
+    await createAdminDetails()
+    // await createPasswordResets()
+    await createOtpTable()
+
+    await createLibrary()
+    await createISBN()
+    await createBooks()
+    await createCatalog()
+    // await createBookDetails()
+    await createIssues()
+    await createReservations()
+    await createFine()
+    // }
+
     if (!dataExists) {
       console.log("Populating database with initial data...");
       await populateDB()
     }
-    
-    
+
+
     console.log("DB initialized successfully")
   } catch (error) {
     console.error("Error initializing database:", error)
-  }   
+  }
   return
 }
