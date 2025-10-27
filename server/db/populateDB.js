@@ -4,16 +4,6 @@ import { connectDB } from "./dbconn.js"
 // TO BE DIRECTLY CALLED AS A SCRIPT TO POPULATE THE DB WITH SAMPLE DATA
 // ---------- INSERT FUNCTIONS ----------
 
-const insertUsers = async () => {
-  await sql`
-    INSERT INTO USERS (name, books_issued, role) VALUES
-      ('Alice Johnson', 2, 'ISSUER'),
-      ('Bob Smith', 0, 'ISSUER'),
-      ('Charlie Admin', 0, 'ADMIN'),
-      ('Diana Prince', 1, 'ISSUER')
-    ON CONFLICT DO NOTHING;
-  `
-}
 
 const insertLibraries = async () => {
   await sql`
@@ -108,15 +98,15 @@ export const populateDB = async () => {
   try {
     await connectDB()
 
-    await insertUsers()
+    // await insertUsers()
     await insertLibraries()
     await insertISBNs()
     await insertBooks()
     await insertCatalog()
     // await insertBookDetails()
-    await insertIssues()
-    await insertFines()
-    await insertReservations()
+    // await insertIssues()
+    // await insertFines()
+    // await insertReservations()
 
     console.log("Database populated successfully!")
   } catch (error) {

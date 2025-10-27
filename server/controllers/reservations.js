@@ -1,19 +1,20 @@
 import sql, { connectDB } from "../db/dbconn.js";
 
 // Calculate expiry date.
-const getExpirationDate = (date) => {
+const getExpirationDate = (days) => {
   const expires_at = new Date();
-  expires_at.setDate(expires_at.getDate + date);
+  expires_at.setDate(expires_at.getDate() + days);
   expires_at.setHours(23, 59, 59, 999);
   return expires_at;
-}
+};
 
-// Creates a new reservation for a given ISBN at a specific library for a user.
+
+ // Creates a new reservation for a given ISBN at a specific library for a user.
 const createReservation = async (req, res) => {
   try {
     // Expect Book ISBN, Library ID, and User ID in the request body.
     const { isbn_id, library_id, uid } = req.body;
-
+    console.log("Creating reservation:", { isbn_id, library_id, uid });
     if (!isbn_id || !library_id || !uid) {
       return res.status(400).json({
         error: "Missing required fields: isbn_id, library_id, uid",
@@ -22,6 +23,7 @@ const createReservation = async (req, res) => {
 
     await connectDB();
 
+    // Run reservation logic inside a DB transaction so it has access to request variables
     const result = await sql.begin(async (sql) => {
 
       // Ensure the user doesn't already have a reservation for this ISBN in this library.
@@ -34,16 +36,17 @@ const createReservation = async (req, res) => {
       `;
 
       if (existingReservations.length > 0) {
-        throw new Error("Reservation already exists.");
+        return { status: 'EXISTS' };
       }
-
+      
       // Count total AVAILABLE physical copies in this library for this ISBN.
       const availableCopies = await sql`
         SELECT COUNT(*)::int AS count
-        FROM BOOKS
-        WHERE isbn_id = ${isbn_id}
+        FROM BOOKS, CATALOG
+        WHERE BOOKS.book_id = CATALOG.book_id
+          AND isbn_id = ${isbn_id}
           AND library_id = ${library_id}
-          AND status = 'AVAILABLE';
+          AND status = 'AVAILABLE'
       `;
 
       // Count total RESERVED (active) reservations for this ISBN in this library.
@@ -52,7 +55,7 @@ const createReservation = async (req, res) => {
         FROM RESERVATIONS
         WHERE isbn_id = ${isbn_id}
           AND library_id = ${library_id}
-          AND status = 'RESERVED';
+          AND status = 'RESERVED'
       `;
 
       // Reservation lasts for 7 days once active.
@@ -61,7 +64,7 @@ const createReservation = async (req, res) => {
       // Check and assign reservation status.
       let status = 'WAITLISTED';
       let expires_at = null;
-			
+      
       if (availableCopies[0].count > activeReservations[0].count) {
         status = 'RESERVED';
         expires_at = getExpirationDate(EXPIRATION_DAYS);
@@ -76,15 +79,20 @@ const createReservation = async (req, res) => {
       return { status };
     });
 
+    
+    if (result.status === 'EXISTS') {
+      return res.status(200).json({ message: "You have already reserved" });
+    }
+
     return res.status(200).json({
       message: result.status === 'RESERVED'
-        ? "Book reserved successfully. Please collect from the library within 7 days."
-        : "All available copies are currently reserved. You have been added to the waitlist."
+      ? "Book reserved successfully. Please collect from the library within 7 days."
+      : "All available copies are currently reserved. You have been added to the waitlist."
     });
 
   } catch (error) {
     console.error("Error in createReservation:", error);
-    if (error.message.includes("already exists")) {
+    if (error.message && error.message.includes("already exists")) {
       return res.status(400).json({
         error: error.message
       });
@@ -109,7 +117,7 @@ const getReservationsByUid = async (req, res) => {
         r.isbn_id,
         i.title,
         l.name,
-        r.reserved_at,
+        -- r.reserved_at,
         r.expires_at,
         r.status
       FROM RESERVATIONS r

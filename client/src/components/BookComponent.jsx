@@ -1,6 +1,10 @@
 import React from "react";
 import { faCheck, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import useAuthContext from '../hooks/useAuthContext';
+import axios from "axios";
+import { BACKEND_URL } from "../config";
+import { toast } from 'sonner';
 
 const styles = {
     card: {
@@ -139,14 +143,38 @@ const BookComponent = ({ book }) => {
         genre,
         publication,
         lang,
-        pages,
         doc_type,
         status,
-        dewey_dec_loc,
     } = book;
 
     const url = `https://covers.openlibrary.org/b/isbn/${isbn_id}-M.jpg`;
     const isAvailable = status === "AVAILABLE";
+    const { state, dispatch } = useAuthContext();
+    const { user } = state;
+
+    const createReservation = async (book) => {
+        console.log("Creating reservation for book:", book);
+        console.log("User ID:", user?.uid);
+        console.log("ISBN ID:", book.isbn_id);
+        console.log("Library ID:", book.library_id);
+        try {
+            const response = await axios.post(`${BACKEND_URL}/reservations`, {
+                uid: user?.uid,
+                isbn_id: book?.isbn_id,
+                library_id: book?.library_id,
+            });
+            console.log("Reservation response:", response.data);
+            if(response) {
+                toast.success(response.data.message);
+            }
+            else {
+                toast.error("Failed to create reservation.");
+            }
+        } catch (error) {
+            console.error("Error creating reservation:", error);
+        }
+    }
+    // console.log(user);
 
     return (
         <div style={styles.card} data-testid="book-component" className="book-card">
@@ -200,7 +228,7 @@ const BookComponent = ({ book }) => {
                     <FontAwesomeIcon icon={isAvailable ? faCheck : faXmark} />
                     {isAvailable ? "Available Now" : "Not Available"}
                 </div>
-                <button style={styles.button} className="reserve-btn">
+                <button onClick={() => createReservation(book)} style={styles.button} className="reserve-btn">
                     Reserve Book
                 </button>
             </div>

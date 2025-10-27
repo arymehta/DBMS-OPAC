@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import BookComponent from "../components/BookComponent";
+import {
+  Search as IconSearch,
+  X as IconX,
+  BookOpen as IconBookOpen,
+  ChevronLeft as IconChevronLeft,
+  ChevronRight as IconChevronRight,
+} from "lucide-react";
 
 const DashboardPage = () => {
   const [books, setBooks] = useState([]);
@@ -74,8 +81,8 @@ const DashboardPage = () => {
   };
 
   // Filter books by availability
-  const filteredBooks = showOnlyAvailable 
-    ? books.filter(book => book.status === "AVAILABLE")
+  const filteredBooks = showOnlyAvailable
+    ? books.filter((book) => book.status === "AVAILABLE")
     : books;
 
   const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
@@ -102,120 +109,145 @@ const DashboardPage = () => {
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <h1 style={styles.heading}>COEP OPAC System</h1>
+        {/* <h1 style={styles.heading}>COEP OPAC System</h1> */}
+        <h3 className="text-5xl sm:text-6xl font-bold text-gray-900 mb-4">
+            COEP OPAC System
+          </h3>
         <p style={styles.subtitle}>Search and discover books in our collection</p>
       </div>
 
-      {/* Filter Form */}
-      <div style={styles.filterCard}>
-        <div style={styles.filterHeader}>
-          <h2 style={styles.filterTitle}>Search Filters</h2>
-          
-          {/* Availability Toggle */}
-          <div style={styles.toggleContainer}>
-            <label style={styles.toggleLabel}>
-              <span style={styles.toggleText}>Available Only</span>
-              <div 
-                style={{
-                  ...styles.toggleSwitch,
-                  ...(showOnlyAvailable ? styles.toggleSwitchActive : {})
-                }}
-                onClick={() => {
-                  setShowOnlyAvailable(!showOnlyAvailable);
-                  setCurrentPage(1);
-                }}
+      {/* Filter Card - centered and compact */}
+      <div style={styles.filterWrapper}>
+        <div style={styles.filterCard}>
+          <div style={styles.filterHeader}>
+            <h2 style={styles.filterTitle}>Search Filters</h2>
+
+            <div style={styles.toggleContainer}>
+              <label style={styles.toggleLabel}>
+                <span style={styles.toggleText}>Available Only</span>
+                <div
+                  role="button"
+                  aria-pressed={showOnlyAvailable}
+                  tabIndex={0}
+                  onClick={() => {
+                    setShowOnlyAvailable(!showOnlyAvailable);
+                    setCurrentPage(1);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      setShowOnlyAvailable(!showOnlyAvailable);
+                      setCurrentPage(1);
+                    }
+                  }}
+                  style={{
+                    ...styles.toggleSwitch,
+                    ...(showOnlyAvailable ? styles.toggleSwitchActive : {}),
+                  }}
+                >
+                  <div
+                    style={{
+                      ...styles.toggleSlider,
+                      ...(showOnlyAvailable ? styles.toggleSliderActive : {}),
+                    }}
+                  ></div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <form
+            className="filter-form"
+            style={styles.filterForm}
+            onSubmit={handleFilter}
+          >
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Title</label>
+              <input
+                type="text"
+                name="title"
+                value={filters.title}
+                onChange={handleChange}
+                placeholder="Enter book title"
+                style={styles.input}
+              />
+            </div>
+
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Author</label>
+              <input
+                type="text"
+                name="author"
+                value={filters.author}
+                onChange={handleChange}
+                placeholder="Enter author name"
+                style={styles.input}
+              />
+            </div>
+
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Genre</label>
+              <input
+                type="text"
+                name="genre"
+                value={filters.genre}
+                onChange={handleChange}
+                placeholder="Enter genre"
+                style={styles.input}
+              />
+            </div>
+
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Publication</label>
+              <input
+                type="text"
+                name="publication"
+                value={filters.publication}
+                onChange={handleChange}
+                placeholder="Enter publisher"
+                style={styles.input}
+              />
+            </div>
+
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Language</label>
+              <input
+                type="text"
+                name="lang"
+                value={filters.lang}
+                onChange={handleChange}
+                placeholder="Enter language"
+                style={styles.input}
+              />
+            </div>
+
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Document Type</label>
+              <input
+                type="text"
+                name="doc_type"
+                value={filters.doc_type}
+                onChange={handleChange}
+                placeholder="Enter document type"
+                style={styles.input}
+              />
+            </div>
+
+            <div style={styles.actions}>
+              <button type="submit" style={styles.button}>
+                <IconSearch size={16} style={{ marginRight: 8 }} />
+                Search
+              </button>
+              <button
+                type="button"
+                onClick={clearFilters}
+                style={styles.clearButton}
               >
-                <div style={{
-                  ...styles.toggleSlider,
-                  ...(showOnlyAvailable ? styles.toggleSliderActive : {})
-                }}></div>
-              </div>
-            </label>
-          </div>
+                <IconX size={16} />
+                <span style={{ marginLeft: 8 }}>Clear</span>
+              </button>
+            </div>
+          </form>
         </div>
-
-        <form style={styles.filterForm} onSubmit={handleFilter}>
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Title</label>
-            <input
-              type="text"
-              name="title"
-              value={filters.title}
-              onChange={handleChange}
-              placeholder="Enter book title"
-              style={styles.input}
-            />
-          </div>
-
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Author</label>
-            <input
-              type="text"
-              name="author"
-              value={filters.author}
-              onChange={handleChange}
-              placeholder="Enter author name"
-              style={styles.input}
-            />
-          </div>
-
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Genre</label>
-            <input
-              type="text"
-              name="genre"
-              value={filters.genre}
-              onChange={handleChange}
-              placeholder="Enter genre"
-              style={styles.input}
-            />
-          </div>
-
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Publication</label>
-            <input
-              type="text"
-              name="publication"
-              value={filters.publication}
-              onChange={handleChange}
-              placeholder="Enter publisher"
-              style={styles.input}
-            />
-          </div>
-
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Language</label>
-            <input
-              type="text"
-              name="lang"
-              value={filters.lang}
-              onChange={handleChange}
-              placeholder="Enter language"
-              style={styles.input}
-            />
-          </div>
-
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Document Type</label>
-            <input
-              type="text"
-              name="doc_type"
-              value={filters.doc_type}
-              onChange={handleChange}
-              placeholder="Enter document type"
-              style={styles.input}
-            />
-          </div>
-
-          <div style={styles.actions}>
-            <button type="submit" style={styles.button}>
-              🔍 Search
-            </button>
-            <button type="button" onClick={clearFilters} style={styles.clearButton}>
-              ✕ Clear All
-            </button>
-          </div>
-        </form>
       </div>
 
       {/* Results Section */}
@@ -229,65 +261,82 @@ const DashboardPage = () => {
           <>
             <div style={styles.resultsHeader}>
               <p style={styles.resultCount}>
-                Found {filteredBooks.length} book{filteredBooks.length !== 1 ? 's' : ''} 
+                Found {filteredBooks.length} book
+                {filteredBooks.length !== 1 ? "s" : ""}
                 {showOnlyAvailable && " (Available)"}
                 {totalPages > 1 && ` • Page ${currentPage} of ${totalPages}`}
               </p>
             </div>
-            
-            {currentBooks.map((book) => <BookComponent key={book.id} book={book} />)}
-            
+
+            {currentBooks.map((book) => (
+              <BookComponent key={book.id} book={book} />
+            ))}
+
             {/* Pagination Controls */}
             {totalPages > 1 && (
               <div style={styles.paginationContainer}>
-                <button 
-                  onClick={goToPrevPage} 
+                <button
+                  onClick={goToPrevPage}
                   disabled={currentPage === 1}
                   style={{
                     ...styles.paginationButton,
-                    ...(currentPage === 1 ? styles.paginationButtonDisabled : {})
+                    ...(currentPage === 1 ? styles.paginationButtonDisabled : {}),
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
                   }}
                 >
-                  ← Previous
+                  <IconChevronLeft size={16} />
+                  Previous
                 </button>
-                
+
                 <div style={styles.pageNumbers}>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-                    <button
-                      key={pageNum}
-                      onClick={() => goToPage(pageNum)}
-                      style={{
-                        ...styles.pageNumber,
-                        ...(currentPage === pageNum ? styles.pageNumberActive : {})
-                      }}
-                    >
-                      {pageNum}
-                    </button>
-                  ))}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (pageNum) => (
+                      <button
+                        key={pageNum}
+                        onClick={() => goToPage(pageNum)}
+                        style={{
+                          ...styles.pageNumber,
+                          ...(currentPage === pageNum ? styles.pageNumberActive : {}),
+                        }}
+                      >
+                        {pageNum}
+                      </button>
+                    )
+                  )}
                 </div>
-                
-                <button 
-                  onClick={goToNextPage} 
+
+                <button
+                  onClick={goToNextPage}
                   disabled={currentPage === totalPages}
                   style={{
                     ...styles.paginationButton,
-                    ...(currentPage === totalPages ? styles.paginationButtonDisabled : {})
+                    ...(currentPage === totalPages
+                      ? styles.paginationButtonDisabled
+                      : {}),
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
                   }}
                 >
-                  Next →
+                  Next
+                  <IconChevronRight size={16} />
                 </button>
               </div>
             )}
           </>
         ) : (
           <div style={styles.emptyState}>
-            <p style={styles.emptyIcon}>📖</p>
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <IconBookOpen size={56} color="#4a5568" />
+            </div>
             <p style={styles.emptyText}>
               {showOnlyAvailable ? "No available books found." : "No books found."}
             </p>
             <p style={styles.emptySubtext}>
-              {showOnlyAvailable 
-                ? "Try turning off the 'Available Only' filter" 
+              {showOnlyAvailable
+                ? "Try turning off the 'Available Only' filter"
                 : "Try adjusting your search filters"}
             </p>
           </div>
@@ -308,38 +357,48 @@ const styles = {
   },
   header: {
     textAlign: "center",
-    marginBottom: 32,
-    paddingTop: 20,
+    marginBottom: 20,
+    paddingTop: 16,
   },
   heading: {
-    fontSize: "clamp(24px, 5vw, 36px)",
+    fontSize: "clamp(22px, 4.5vw, 34px)",
     margin: 0,
-    marginBottom: 8,
+    marginBottom: 6,
     color: "#1a202c",
     fontWeight: 700,
   },
   subtitle: {
-    fontSize: "clamp(14px, 3vw, 16px)",
+    fontSize: "clamp(13px, 2.5vw, 15px)",
     color: "#718096",
     margin: 0,
   },
+
+  /* New wrapper that centers the card and gives a compact max width */
+  filterWrapper: {
+    display: "flex",
+    justifyContent: "center",
+    marginBottom: 28,
+  },
+
   filterCard: {
     backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: "24px",
-    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.07)",
-    marginBottom: 32,
+    borderRadius: 10,
+    padding: "16px",
+    boxShadow: "0 6px 18px rgba(12, 24, 60, 0.06)",
+    width: "100%",
+    maxWidth: 980,
+    boxSizing: "border-box",
   },
   filterHeader: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: 12,
+    gap: 12,
     flexWrap: "wrap",
-    gap: 16,
   },
   filterTitle: {
-    fontSize: "clamp(18px, 4vw, 20px)",
+    fontSize: "clamp(16px, 2.5vw, 18px)",
     color: "#2d3748",
     margin: 0,
     fontWeight: 600,
@@ -351,64 +410,67 @@ const styles = {
   toggleLabel: {
     display: "flex",
     alignItems: "center",
-    gap: 12,
+    gap: 10,
     cursor: "pointer",
     userSelect: "none",
   },
   toggleText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 600,
     color: "#4a5568",
   },
   toggleSwitch: {
     position: "relative",
-    width: 52,
-    height: 28,
-    backgroundColor: "#cbd5e0",
+    width: 46,
+    height: 24,
+    backgroundColor: "#e2e8f0",
     borderRadius: 14,
-    transition: "all 0.3s ease",
+    transition: "all 0.18s ease",
     cursor: "pointer",
+    flexShrink: 0,
   },
   toggleSwitchActive: {
     backgroundColor: "#48bb78",
   },
   toggleSlider: {
     position: "absolute",
-    top: 3,
-    left: 3,
-    width: 22,
-    height: 22,
+    top: 2,
+    left: 2,
+    width: 20,
+    height: 20,
     backgroundColor: "#fff",
     borderRadius: "50%",
-    transition: "all 0.3s ease",
-    boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+    transition: "all 0.18s ease",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
   },
   toggleSliderActive: {
-    transform: "translateX(24px)",
+    transform: "translateX(22px)",
   },
+
+  /* Compact and responsive filter form */
   filterForm: {
     display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
-    gap: "20px 16px",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: "12px",
   },
   inputGroup: {
     display: "flex",
     flexDirection: "column",
   },
   label: {
-    fontSize: 12,
-    fontWeight: 600,
+    fontSize: 11,
+    fontWeight: 700,
     color: "#4a5568",
     marginBottom: 6,
     textTransform: "uppercase",
-    letterSpacing: "0.5px",
+    letterSpacing: "0.6px",
   },
   input: {
-    padding: "11px 14px",
-    border: "2px solid #e2e8f0",
+    padding: "10px 12px",
+    border: "1.5px solid #e6edf6",
     borderRadius: 8,
-    fontSize: 14,
-    transition: "all 0.2s ease",
+    fontSize: 13,
+    transition: "all 0.15s ease",
     outline: "none",
     backgroundColor: "#fff",
     width: "100%",
@@ -416,42 +478,45 @@ const styles = {
   },
   actions: {
     display: "flex",
-    gap: 12,
+    gap: 10,
     gridColumn: "1 / -1",
-    marginTop: 8,
-    justifyContent: "center",
+    marginTop: 6,
+    justifyContent: "flex-end",
     flexWrap: "wrap",
   },
   button: {
-    background: "linear-gradient(135deg, #001261ff 0%, #320064ff 100%)",
+    background:
+      "linear-gradient(135deg, rgba(0,18,97,1) 0%, rgba(50,0,100,1) 100%)",
     color: "#fff",
     border: "none",
-    padding: "12px 32px",
+    padding: "10px 18px",
     borderRadius: 8,
     cursor: "pointer",
-    fontSize: 15,
-    fontWeight: 600,
-    transition: "all 0.3s ease",
-    boxShadow: "0 4px 12px rgba(102, 126, 234, 0.3)",
-    minWidth: "140px",
+    fontSize: 14,
+    fontWeight: 700,
+    transition: "all 0.18s ease",
+    boxShadow: "0 6px 14px rgba(102, 126, 234, 0.18)",
+    display: "inline-flex",
+    alignItems: "center",
   },
   clearButton: {
     background: "#fff",
     color: "#4a5568",
-    border: "2px solid #e2e8f0",
-    padding: "12px 32px",
+    border: "1.5px solid #e6edf6",
+    padding: "10px 14px",
     borderRadius: 8,
     cursor: "pointer",
-    fontSize: 15,
-    fontWeight: 600,
-    transition: "all 0.3s ease",
-    minWidth: "140px",
+    fontSize: 14,
+    fontWeight: 700,
+    transition: "all 0.18s ease",
+    display: "inline-flex",
+    alignItems: "center",
   },
   resultsSection: {
     minHeight: 200,
   },
   resultsHeader: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   resultCount: {
     fontSize: 14,
@@ -465,26 +530,26 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     gap: 12,
-    marginTop: 32,
+    marginTop: 24,
     marginBottom: 20,
     flexWrap: "wrap",
   },
   paginationButton: {
     background: "#fff",
     color: "#667eea",
-    border: "2px solid #667eea",
-    padding: "10px 20px",
+    border: "1.5px solid #667eea",
+    padding: "8px 14px",
     borderRadius: 8,
     cursor: "pointer",
-    fontSize: 14,
-    fontWeight: 600,
-    transition: "all 0.3s ease",
+    fontSize: 13,
+    fontWeight: 700,
+    transition: "all 0.18s ease",
   },
   paginationButtonDisabled: {
-    opacity: 0.4,
+    opacity: 0.45,
     cursor: "not-allowed",
     color: "#a0aec0",
-    borderColor: "#e2e8f0",
+    borderColor: "#edf2f7",
   },
   pageNumbers: {
     display: "flex",
@@ -495,17 +560,18 @@ const styles = {
   pageNumber: {
     background: "#fff",
     color: "#4a5568",
-    border: "2px solid #e2e8f0",
-    padding: "8px 14px",
+    border: "1.5px solid #edf2f7",
+    padding: "6px 10px",
     borderRadius: 8,
     cursor: "pointer",
-    fontSize: 14,
-    fontWeight: 600,
-    minWidth: 40,
-    transition: "all 0.3s ease",
+    fontSize: 13,
+    fontWeight: 700,
+    minWidth: 36,
+    transition: "all 0.18s ease",
   },
   pageNumberActive: {
-    background: "linear-gradient(135deg, #001261ff 0%, #320064ff 100%)",
+    background:
+      "linear-gradient(135deg, rgba(0,18,97,1) 0%, rgba(50,0,100,1) 100%)",
     color: "#fff",
     borderColor: "#667eea",
   },
@@ -517,90 +583,88 @@ const styles = {
     padding: 60,
   },
   spinner: {
-    width: 50,
-    height: 50,
-    border: "4px solid #e2e8f0",
+    width: 44,
+    height: 44,
+    border: "4px solid #e6edf6",
     borderTop: "4px solid #667eea",
     borderRadius: "50%",
     animation: "spin 1s linear infinite",
   },
   loadingText: {
-    marginTop: 16,
+    marginTop: 12,
     color: "#718096",
-    fontSize: 16,
+    fontSize: 15,
   },
   emptyState: {
     textAlign: "center",
-    padding: 60,
+    padding: 40,
     backgroundColor: "#fff",
-    borderRadius: 12,
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.05)",
-  },
-  emptyIcon: {
-    fontSize: 64,
-    margin: 0,
-    marginBottom: 16,
+    borderRadius: 10,
+    boxShadow: "0 2px 8px rgba(12, 24, 60, 0.04)",
   },
   emptyText: {
-    fontSize: 20,
+    fontSize: 18,
     color: "#2d3748",
-    margin: 0,
-    marginBottom: 8,
-    fontWeight: 600,
+    margin: "12px 0 6px",
+    fontWeight: 700,
   },
   emptySubtext: {
-    fontSize: 15,
-    color: "#a0aec0",
+    fontSize: 14,
+    color: "#9aa6b2",
     margin: 0,
   },
 };
 
-// Add keyframe animation and responsive styles
+/* Add keyframe animation and some responsive tweaks using a style tag so these styles remain when the component is imported */
 const styleSheet = document.createElement("style");
 styleSheet.textContent = `
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
   }
-  
-  input:focus {
+
+  .filter-form input:focus {
     border-color: #667eea !important;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.06) !important;
   }
-  
-  button:hover:not(:disabled) {
+
+  .filter-form button:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4) !important;
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.12) !important;
   }
-  
-  button:active {
+
+  .filter-form button:active {
     transform: translateY(0);
   }
-  
-  button:disabled {
+
+  .filter-form button:disabled {
     transform: none !important;
   }
-  
+
   .pageNumber:hover:not(.pageNumberActive) {
     border-color: #667eea;
     background: #f7fafc;
   }
-  
+
   .paginationButton:hover:not(:disabled) {
     background: #667eea;
     color: #fff;
   }
-  
-  /* Responsive grid layouts */
-  @media (max-width: 1024px) {
-    form[style*="grid-template-columns"] {
-      grid-template-columns: repeat(2, 1fr) !important;
-    }
-  }
-  
+
+  /* Responsiveness: narrow screens place actions full width */
   @media (max-width: 640px) {
-    form[style*="grid-template-columns"] {
-      grid-template-columns: 1fr !important;
+    .filter-form {
+      gap: 10px;
+    }
+
+    .filter-form .actions {
+      justify-content: stretch !important;
+      gap: 8px;
+    }
+
+    .filter-form .actions button {
+      width: 100%;
+      justify-content: center;
     }
   }
 `;
