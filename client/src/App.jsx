@@ -6,6 +6,7 @@ import CandidateAuth from './pages/CandidateAuth';
 import AdminAuth from './pages/AdminAuth';
 import useAuthContext from './hooks/useAuthContext';
 import DashboardPage from './pages/DashboardPage';
+import { Toaster } from 'sonner'; 
 
 function App() {
   const { state } = useAuthContext();
@@ -52,6 +53,7 @@ function App() {
 
   return (
     <>
+      <Toaster />
       <Sidebar />
       <Routes>
         <Route path="/" element={<Landing />} />
