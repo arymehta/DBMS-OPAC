@@ -22,7 +22,7 @@ const Navigation = () => {
             <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-lg">OP</span>
             </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">OPAC you</span>
+            <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">OPAC</span>
           </Link>
 
           <div className="hidden md:flex items-center space-x-8">

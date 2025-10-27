@@ -94,7 +94,7 @@ const CandidateSignup = () => {
   };
 
   return (
-    <AuthLayout title="Create Account" subtitle="Join OPAC you as a Candidate">
+    <AuthLayout title="Create Account" subtitle="Join OPAC as a Candidate">
       <form onSubmit={handleSignup} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-slate-300 mb-2">Full Name</label>
