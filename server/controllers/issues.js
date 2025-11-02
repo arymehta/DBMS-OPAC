@@ -2,6 +2,7 @@ import sql, { connectDB } from "../db/dbconn.js";
 import { getExpirationDate, updateQueue } from "./reservations.js"
 
 const getActiveIssuesByUid = async (req, res) => {
+	console.log("Fetching active issues for user:", req.params.uid);
 	try {
 		const { uid } = req.params
 
@@ -14,23 +15,25 @@ const getActiveIssuesByUid = async (req, res) => {
 		await connectDB();
 		const issues = await sql`
 			SELECT
-				iss.isbn_id,
+				iss.book_id,
 				i.title,
 				i.author,
 				l.name AS library_name,
 				iss.issued_on,
 				iss.due_date,
+				iss.uid,
 				COALESCE(f.amount, 0) AS fine_amount
 			FROM ISSUES iss
 			JOIN BOOKS b ON iss.book_id = b.book_id
-			JOIN ISBN i ON b.book_id = i.book_id
-			JOIN LIBRARY l ON b.library_id = l.library_id
+			JOIN CATALOG c ON b.book_id = c.book_id
+			JOIN ISBN i ON b.isbn_id = i.isbn_id
+			JOIN LIBRARY l ON c.library_id = l.library_id
 			LEFT JOIN FINE f ON iss.issue_id = f.issue_id
-			WHERE uid = ${uid}
-				AND status = 'ISSUED'
+			WHERE iss.uid = ${uid}
 			ORDER BY iss.issued_on DESC
 		`;
 
+		console.log(issues);
 		if (issues.length === 0) {
 			return res.status(404).json({
 				message: "No issues found for this user",

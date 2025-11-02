@@ -1,8 +1,12 @@
-import React from 'react';
+import React, { use } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, BookOpen, Users, Zap } from 'lucide-react';
+import {IssuerDetails} from '../components/IssuerDetails';
+;
 
 const Landing = () => {
+
+
   const announcements = [
     {
       id: 1,
@@ -68,21 +72,7 @@ const Landing = () => {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 mb-16">
-          {features.map((feature) => (
-            <div
-              key={feature.title}
-              className="bg-white rounded-xl p-8 border border-gray-200 hover:border-blue-300 hover:shadow-lg transition"
-            >
-              <feature.icon className="text-blue-600 mb-4" size={32} />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
-                {feature.title}
-              </h3>
-              <p className="text-gray-600">{feature.description}</p>
-            </div>
-          ))}
-        </div>
-
+        <IssuerDetails/>
         <div id="announcements" className="mb-16">
           <h2 className="text-3xl font-bold text-gray-900 mb-8">Announcements</h2>
           <div className="space-y-4">
