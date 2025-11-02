@@ -107,7 +107,7 @@ const createReservation = async (req, res) => {
 const getReservationsByUid = async (req, res) => {
   try {
     await connectDB();
-    const { uid } = req.params;
+    const { uid } = req?.params;
     console.log("Fetching reservations of User:", uid);
     
     // Fetch reservations for this user with book and library details.
@@ -117,14 +117,13 @@ const getReservationsByUid = async (req, res) => {
         r.isbn_id,
         i.title,
         l.name,
-        -- r.reserved_at,
         r.expires_at,
         r.status
       FROM RESERVATIONS r
       JOIN ISBN i ON r.isbn_id = i.isbn_id
       JOIN LIBRARY l ON r.library_id = l.library_id
       WHERE r.uid = ${uid}
-      ORDER BY r.reserved_at DESC
+      ORDER BY r.expires_at DESC
     `;
     
     if (!reservationDetails || reservationDetails.length === 0) {
