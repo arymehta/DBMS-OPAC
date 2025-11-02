@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { BACKEND_URL } from '../config';
 import { toast } from 'sonner';
+import { library } from '@fortawesome/fontawesome-svg-core';
 
 
 export const AdminDashboard = () => {
@@ -10,6 +11,8 @@ export const AdminDashboard = () => {
     const [issueForm, setIssueForm] = useState({
         uid: '',
         book_id: '',
+        library_id: '',
+        due_date: ''
     });
     const [bookForm, setBookForm] = useState({
         isbn_id: '',
@@ -64,8 +67,8 @@ export const AdminDashboard = () => {
         console.log('Issue Book:', issueForm);
         try {
             await axios.post(`${BACKEND_URL}/issues`, issueForm);
-            setIssueForm({ uid: '', book_id: '' });
             toast.success("Book issued successfully!");
+            setIssueForm({ uid: '', book_id: '', library_id: '', due_date: '' });
         } catch (error) {
             console.error("Error issuing book:", error);
             toast.error("Failed to issue book. Please check the details and try again.");
@@ -174,7 +177,7 @@ export const AdminDashboard = () => {
                                     <div className="space-y-6">
                                         <div>
                                             <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                                Member ID or Email
+                                                Member ID 
                                             </label>
                                             <input
                                                 type="text"
@@ -187,7 +190,7 @@ export const AdminDashboard = () => {
 
                                         <div>
                                             <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                                Book ID or ISBN
+                                                Book ISBN
                                             </label>
                                             <input
                                                 type="text"
@@ -197,15 +200,26 @@ export const AdminDashboard = () => {
                                                 placeholder="Enter book ID or ISBN"
                                             />
                                         </div>
-
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                Library ID
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={issueForm.library_id}
+                                                onChange={(e) => setIssueForm({ ...issueForm, library_id: parseInt(e.target.value) })}
+                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                placeholder="Enter library ID"
+                                            />
+                                        </div>
                                         <div>
                                             <label className="block text-sm font-semibold text-gray-700 mb-2">
                                                 Due Date
                                             </label>
                                             <input
                                                 type="date"
-                                                value={issueForm.dueDate}
-                                                onChange={(e) => setIssueForm({ ...issueForm, dueDate: e.target.value })}
+                                                value={issueForm.due_date}
+                                                onChange={(e) => setIssueForm({ ...issueForm, due_date: e.target.value })}
                                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                             />
                                         </div>
