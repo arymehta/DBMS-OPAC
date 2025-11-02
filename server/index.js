@@ -10,6 +10,7 @@ import bookRoutes from "./routes/books.js";
 import isbnRoutes from "./routes/isbn.js";
 import authRoutes from "./routes/auth.js";
 import reservationRoutes from "./routes/reservations.js";
+import issueRoutes from "./routes/issues.js";
 
 const app = express();
 
@@ -27,7 +28,7 @@ app.use("/books", bookRoutes);
 app.use("/isbn", isbnRoutes);
 app.use("/auth", authRoutes);
 app.use("/reservations", reservationRoutes);
-
+app.use("/issues", issueRoutes);
 
 app.get("/", (req, res) => {
   res.send("Welcome to the DBMS OPAC API");
