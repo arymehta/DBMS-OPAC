@@ -9,10 +9,10 @@ import catalogRoutes from "./routes/catalog.js";
 import bookRoutes from "./routes/books.js";
 import isbnRoutes from "./routes/isbn.js";
 import authRoutes from "./routes/auth.js";
+import issueRoutes from "./routes/issues.js";
 import reservationRoutes from "./routes/reservations.js";
 import fineRoutes from "./routes/fines.js";
 import scheduleFineJob from "./utils/fineCronJob.js";
-import issueRoutes from "./routes/issues.js";
 import memberRoutes from "./routes/members.js";
 
 
@@ -31,6 +31,7 @@ app.use("/catalog", catalogRoutes);
 app.use("/books", bookRoutes);
 app.use("/isbn", isbnRoutes);
 app.use("/auth", authRoutes);
+app.use("/issues", issueRoutes);
 app.use("/reservations", reservationRoutes);
 app.use("/fines", fineRoutes);
 app.use("/members", memberRoutes);
