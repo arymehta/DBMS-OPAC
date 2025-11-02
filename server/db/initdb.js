@@ -108,6 +108,7 @@ const createFine = async () => {
       amount DECIMAL(4,2) DEFAULT 0.0,
       paid_status BOOLEAN DEFAULT FALSE,
       paid_date DATE,
+      sbi_dtu VARCHAR(50),
       reason VARCHAR(255),
       FOREIGN KEY (issue_id) REFERENCES ISSUES(issue_id)
         ON UPDATE CASCADE

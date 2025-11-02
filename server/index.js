@@ -10,6 +10,8 @@ import bookRoutes from "./routes/books.js";
 import isbnRoutes from "./routes/isbn.js";
 import authRoutes from "./routes/auth.js";
 import reservationRoutes from "./routes/reservations.js";
+import fineRoutes from "./routes/fines.js";
+import scheduleFineJob from "./utils/fineCronJob.js";
 
 const app = express();
 
@@ -27,6 +29,10 @@ app.use("/books", bookRoutes);
 app.use("/isbn", isbnRoutes);
 app.use("/auth", authRoutes);
 app.use("/reservations", reservationRoutes);
+app.use("/fines", fineRoutes);
+
+
+scheduleFineJob();
 
 
 app.get("/", (req, res) => {
