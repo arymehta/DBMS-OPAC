@@ -2,7 +2,6 @@ import sql, { connectDB } from "../db/dbconn.js";
 import { getExpirationDate, updateQueue } from "./reservations.js"
 
 const getActiveIssuesByUid = async (req, res) => {
-	console.log("Fetching active issues for user:", req.params.uid);
 	try {
 		const { uid } = req.params
 
@@ -16,6 +15,7 @@ const getActiveIssuesByUid = async (req, res) => {
 		const issues = await sql`
 			SELECT
 				iss.book_id,
+				i.isbn_id,
 				i.title,
 				i.author,
 				l.name AS library_name,
@@ -25,30 +25,23 @@ const getActiveIssuesByUid = async (req, res) => {
 				COALESCE(f.amount, 0) AS fine_amount
 			FROM ISSUES iss
 			JOIN BOOKS b ON iss.book_id = b.book_id
-			JOIN CATALOG c ON b.book_id = c.book_id
 			JOIN ISBN i ON b.isbn_id = i.isbn_id
+			JOIN CATALOG c ON b.book_id = c.book_id
 			JOIN LIBRARY l ON c.library_id = l.library_id
 			LEFT JOIN FINE f ON iss.issue_id = f.issue_id
 			WHERE iss.uid = ${uid}
+				AND iss.status = 'ACTIVE'
 			ORDER BY iss.issued_on DESC
 		`;
-
-		console.log(issues);
-		if (issues.length === 0) {
-			return res.status(404).json({
-				message: "No issues found for this user",
-			});
-		}
 		return res.status(200).json(issues);
 		
 	} catch (error) {
-		console.error("Error fetching issues:", error);
+		console.error("Error fetching active issues:", error);
 		return res.status(500).json({
 			error: "Internal server error"
 		});
 	}
 };
-
 
 const getPastIssuesByUid = async (req, res) => {
 	try {
@@ -63,7 +56,7 @@ const getPastIssuesByUid = async (req, res) => {
 		await connectDB();
 		const issues = await sql`
 			SELECT
-				iss.isbn_id,
+				i.isbn_id,
 				i.title,
 				i.author,
 				l.name AS library_name,
@@ -72,23 +65,18 @@ const getPastIssuesByUid = async (req, res) => {
 				COALESCE(f.amount, 0) AS fine_amount
 			FROM ISSUES iss
 			JOIN BOOKS b ON iss.book_id = b.book_id
-			JOIN ISBN i ON b.book_id = i.book_id
-			JOIN LIBRARY l ON b.library_id = l.library_id
+			JOIN ISBN i ON b.isbn_id = i.isbn_id
+			JOIN CATALOG c ON b.book_id = c.book_id
+			JOIN LIBRARY l ON c.library_id = l.library_id
 			LEFT JOIN FINE f ON iss.issue_id = f.issue_id
-			WHERE uid = ${uid}
-				AND status = 'RETURNED'
+			WHERE iss.uid = ${uid}
+				AND iss.status = 'RETURNED'
 			ORDER BY iss.issued_on DESC
 		`;
-
-		if (issues.length === 0) {
-			return res.status(404).json({
-				message: "No issues found for this user",
-			});
-		}
 		return res.status(200).json(issues);
 		
 	} catch (error) {
-		console.error("Error fetching issues:", error);
+		console.error("Error fetching past issues:", error);
 		return res.status(500).json({
 			error: "Internal server error"
 		});
@@ -97,34 +85,34 @@ const getPastIssuesByUid = async (req, res) => {
 
 const createIssue = async (req, res) => {
 	try {
-		const { isbn_id, uid, library_id, due_date } = req.body;
-		console.log("Creating issue for isbn_id:", isbn_id, "uid:", uid, "library_id:", library_id, "due_date:", due_date);
+		const { book_id, uid, due_date } = req.body;
 		
-		if(!isbn_id || !uid || !library_id) {
+		if(!book_id || !uid) {
 			return res.status(400).json({
-				error: "Missing required fields: isbn_id, uid, library_id",
+				error: "Missing required fields: book_id, uid",
 			})
 		}
 		
 		await connectDB();
 		
-		await sql.begin(async (sql) => {
-			// Find an available book with the given isbn_id at the specified library
-			const availableBooks = await sql`
+		const message = await sql.begin(async (sql) => {
+			// Get book details for given book_id.
+			const bookDetails = await sql`
 				SELECT b.book_id, b.isbn_id, c.library_id, b.status
 				FROM BOOKS b
-				JOIN CATALOG c ON b.book_id = c.book_id
-				WHERE b.isbn_id = ${isbn_id}
-					AND c.library_id = ${library_id}
-					AND b.status = 'AVAILABLE'
-				LIMIT 1
-			`;
-			
-			if (availableBooks.length === 0) {
-				throw new Error("No available copies of this book found at the specified library");
+				JOIN CATALOG C ON b.book_id = c.book_id
+				WHERE b.book_id = ${book_id}
+			`
+
+			if (bookDetails.length === 0) {
+				return "Book not found"
 			}
-			
-			const book_id = availableBooks[0].book_id;
+
+			if (bookDetails[0].status === 'ISSUED') {
+				return "Book already issued"
+			}
+
+			const { isbn_id, library_id } = bookDetails[0];
 			
 			// Check if user has an active reservation for this book at this library.
 			const existingReservation = await sql`
@@ -134,10 +122,12 @@ const createIssue = async (req, res) => {
 					AND isbn_id = ${isbn_id}
 					AND library_id = ${library_id}
 			`;
+			
 			// Case 1: User has reserved the book before
 			if(existingReservation.length > 0) {
+				// User is still in waitlist, invalid issue
 				if(existingReservation[0].status === 'WAITLISTED') {
-					throw new Error("User is in waitlist. Cannot issue book.")
+					return "User is in waitlist. Cannot issue book."
 				}
 				
 				// User has a valid reservation. Proceed with issue.
@@ -150,16 +140,17 @@ const createIssue = async (req, res) => {
 				// Update reservation queue.
 				await updateQueue(sql, isbn_id, library_id);
 			}
-			// Case 2: User hasn't reserved book (walk-in issual).
+			
+			// Case 2: User hasn't reserved book (walk-in issue).
 			// Count available copies left in the library.
 			const remainingAvailableCopies = await sql`
 				SELECT COUNT(*)::int AS count
 				FROM BOOKS b
 				JOIN CATALOG c ON b.book_id = c.book_id
 				WHERE b.isbn_id = ${isbn_id}
-				AND c.library_id = ${library_id}
-				AND b.status = 'AVAILABLE'
-				AND b.book_id != ${book_id}
+					AND c.library_id = ${library_id}
+					AND b.status = 'AVAILABLE'
+					AND b.book_id != ${book_id}
 			`;
 			
 			// Count number of reservations for this book.
@@ -172,10 +163,10 @@ const createIssue = async (req, res) => {
 			
 			// Check if enough copies are available in the library for reserved users.
 			if(remainingAvailableCopies[0].count < totalReservations[0].count) {
-				throw new Error ("All copies of this book are reserved.");
+				return "All copies of this book are currently reserved."
 			}
 			
-			// Walk-in issual allowed.
+			// Walk-in issue allowed.
 			const issued_on = new Date();
 			// Use provided due_date or calculate default (30 days)
 			let finalDueDate;
@@ -196,35 +187,25 @@ const createIssue = async (req, res) => {
 				SET status = 'ISSUED'
 				WHERE book_id = ${book_id}
 			`;
+
+			return "Book issued successfully"
 		});
 		
 		return res.status(200).json({
-			message: "Book issued successfully"
+			message
 		});
 	} catch (error) {
 		console.error("Error issuing book:", error);
-		
-		if (error.message.includes("not found") || 
-			error.message.includes("issued") ||
-			error.message.includes("waitlist") ||
-			error.message.includes("reserved") ||
-			error.message.includes("No available copies")) {
-			
-			return res.status(400).json({
-				error: error.message
-			});
-		}
-		
 		return res.status(500).json({
 			error: "Internal server error"
 		});
 	}
 }
 
-// Return a boot at the library counter
+// Return a book at the library counter
 const returnBook = async (req, res) => {
 	try {
-		const { book_id } = req.body;
+		const { book_id } = req.params;
 		
 		if(!book_id) {
 			return res.status(400).json({
@@ -233,23 +214,24 @@ const returnBook = async (req, res) => {
 		}
 		
 		await connectDB();
-		await sql.begin(async (sql) => {
+		const message = await sql.begin(async (sql) => {
 			// Get book details
 			const bookDetails = await sql`
 				SELECT
-					isbn_id,
-					library_id,
-					status
-				FROM BOOKS
-				WHERE book_id = ${book_id}
+					b.isbn_id,
+					c.library_id,
+					b.status
+				FROM BOOKS b
+				JOIN CATALOG c ON b.book_id = c.book_id
+				WHERE b.book_id = ${book_id}
 			`;
 
 			if (bookDetails.length === 0) {
-				throw new Error("Book not found");
+				return "Book not found"
 			}
 
 			if(bookDetails[0].status === 'AVAILABLE') {
-				throw new Error("Book is not currently issued");
+				return "Book is not currently issued"
 			}
 
 			const { isbn_id, library_id } = bookDetails[0];
@@ -268,25 +250,20 @@ const returnBook = async (req, res) => {
 				UPDATE ISSUES
 				SET status = 'RETURNED'
 				WHERE book_id = ${book_id}
+					AND status = 'ACTIVE'
 			`;
 
 			// Update the reservation queue.
 			await updateQueue(sql, isbn_id, library_id);
+
+			return "Book returned successfully"
 		});
 
 		return res.status(200).json({
-			message: "Book returned successfully"
+			message
 		});
 	} catch (error) {
 		console.error("Error returning book:", error);
-
-		if(error.message.includes("not found") ||
-		error.message.includes("not currently issued")) {
-			return res.status(400).json({
-				error: error.message
-			});
-		}
-
 		return res.status(500).json({
 			error: "Internal server error"
 		});
