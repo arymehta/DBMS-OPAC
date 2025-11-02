@@ -10,7 +10,7 @@ export const AdminDashboard = () => {
     const [activeSection, setActiveSection] = useState('issue');
     const [issueForm, setIssueForm] = useState({
         uid: '',
-        book_id: '',
+        isbn_id: '',
         library_id: '',
         due_date: ''
     });
@@ -68,10 +68,11 @@ export const AdminDashboard = () => {
         try {
             await axios.post(`${BACKEND_URL}/issues`, issueForm);
             toast.success("Book issued successfully!");
-            setIssueForm({ uid: '', book_id: '', library_id: '', due_date: '' });
+            setIssueForm({ uid: '', isbn_id: '', library_id: '', due_date: '' });
         } catch (error) {
             console.error("Error issuing book:", error);
-            toast.error("Failed to issue book. Please check the details and try again.");
+            const errorMessage = error.response?.data?.error || "Failed to issue book";
+            toast.error(errorMessage);
         }
     };
 
@@ -194,8 +195,8 @@ export const AdminDashboard = () => {
                                             </label>
                                             <input
                                                 type="text"
-                                                value={issueForm.book_id}
-                                                onChange={(e) => setIssueForm({ ...issueForm, book_id: parseInt(e.target.value) })}
+                                                value={issueForm.isbn_id}
+                                                onChange={(e) => setIssueForm({ ...issueForm, isbn_id: parseInt(e.target.value) })}
                                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                                 placeholder="Enter book ID or ISBN"
                                             />

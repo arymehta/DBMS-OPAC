@@ -97,33 +97,34 @@ const getPastIssuesByUid = async (req, res) => {
 
 const createIssue = async (req, res) => {
 	try {
-		const { book_id, uid } = req.body;
+		const { isbn_id, uid, library_id, due_date } = req.body;
+		console.log("Creating issue for isbn_id:", isbn_id, "uid:", uid, "library_id:", library_id, "due_date:", due_date);
 		
-		if(!book_id || !uid) {
+		if(!isbn_id || !uid || !library_id) {
 			return res.status(400).json({
-				error: "Missing required fields: book_id, uid",
+				error: "Missing required fields: isbn_id, uid, library_id",
 			})
 		}
 		
 		await connectDB();
 		
 		await sql.begin(async (sql) => {
-			// Get book details for given book_id.
-			const bookDetails = await sql`
-				SELECT book_id, isbn_id, library_id, status
-				FROM BOOKS
-				WHERE book_id = ${book_id}
-			`
+			// Find an available book with the given isbn_id at the specified library
+			const availableBooks = await sql`
+				SELECT b.book_id, b.isbn_id, c.library_id, b.status
+				FROM BOOKS b
+				JOIN CATALOG c ON b.book_id = c.book_id
+				WHERE b.isbn_id = ${isbn_id}
+					AND c.library_id = ${library_id}
+					AND b.status = 'AVAILABLE'
+				LIMIT 1
+			`;
 			
-			if (bookDetails.length === 0) {
-				throw new Error("Book not found");
+			if (availableBooks.length === 0) {
+				throw new Error("No available copies of this book found at the specified library");
 			}
 			
-			if (bookDetails[0].status === 'ISSUED') {
-				throw new Error("Book is already issued")
-			}
-			
-			const { isbn_id, library_id } = bookDetails[0];
+			const book_id = availableBooks[0].book_id;
 			
 			// Check if user has an active reservation for this book at this library.
 			const existingReservation = await sql`
@@ -153,11 +154,12 @@ const createIssue = async (req, res) => {
 			// Count available copies left in the library.
 			const remainingAvailableCopies = await sql`
 				SELECT COUNT(*)::int AS count
-				FROM BOOKS
-				WHERE isbn_id = ${isbn_id}
-				AND library_id = ${library_id}
-				AND status = 'AVAILABLE'
-				AND book_id != ${book_id}
+				FROM BOOKS b
+				JOIN CATALOG c ON b.book_id = c.book_id
+				WHERE b.isbn_id = ${isbn_id}
+				AND c.library_id = ${library_id}
+				AND b.status = 'AVAILABLE'
+				AND b.book_id != ${book_id}
 			`;
 			
 			// Count number of reservations for this book.
@@ -175,16 +177,19 @@ const createIssue = async (req, res) => {
 			
 			// Walk-in issual allowed.
 			const issued_on = new Date();
-			// Can be conditionally assigned based on the issuer (student, faculty, etc.)
-			// Default set to 30 days.
-			const ISSUE_PERIOD = 30;
-			const due_date = getExpirationDate(ISSUE_PERIOD);
+			// Use provided due_date or calculate default (30 days)
+			let finalDueDate;
+			if (due_date) {
+				finalDueDate = new Date(due_date);
+			} else {
+				const ISSUE_PERIOD = 30;
+				finalDueDate = getExpirationDate(ISSUE_PERIOD);
+			}
 			
 			await sql`
 				INSERT INTO ISSUES (book_id, library_id, uid, issued_on, due_date)
-				VALUES (${book_id}, ${library_id}, ${uid}, ${issued_on}, ${due_date})
+				VALUES (${book_id}, ${library_id}, ${uid}, ${issued_on}, ${finalDueDate})
 			`;
-			
 			// Update book status to ISSUED
 			await sql`
 				UPDATE BOOKS
@@ -201,8 +206,9 @@ const createIssue = async (req, res) => {
 		
 		if (error.message.includes("not found") || 
 			error.message.includes("issued") ||
-			error.message.includes("waitlisted") ||
-			error.message.includes("reserved")) {
+			error.message.includes("waitlist") ||
+			error.message.includes("reserved") ||
+			error.message.includes("No available copies")) {
 			
 			return res.status(400).json({
 				error: error.message
@@ -210,7 +216,7 @@ const createIssue = async (req, res) => {
 		}
 		
 		return res.status(500).json({
-			error: "internal server error"
+			error: "Internal server error"
 		});
 	}
 }
