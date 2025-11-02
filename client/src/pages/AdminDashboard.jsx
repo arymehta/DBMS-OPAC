@@ -10,10 +10,14 @@ export const AdminDashboard = () => {
     const [activeSection, setActiveSection] = useState('issue');
     const [issueForm, setIssueForm] = useState({
         uid: '',
-        isbn_id: '',
-        library_id: '',
+        book_id: '',
         due_date: ''
     });
+    const [isSubmittingIssue, setIsSubmittingIssue] = useState(false);
+    const [returnForm, setReturnForm] = useState({
+        book_id: ''
+    });
+    const [isSubmittingReturn, setIsSubmittingReturn] = useState(false);
     const [bookForm, setBookForm] = useState({
         isbn_id: '',
         title: '',
@@ -64,15 +68,38 @@ export const AdminDashboard = () => {
 
     const handleIssueSubmit = async (e) => {
         e.preventDefault();
-        console.log('Issue Book:', issueForm);
+        if (isSubmittingIssue) return;
+        
+        // Validate form (due_date is optional)
+        if (!issueForm.uid || !issueForm.book_id) {
+            toast.error("Please fill in Member ID and Book ID");
+            return;
+        }
+        
+        setIsSubmittingIssue(true);
+        const requestBody = {
+            book_id: issueForm.book_id,
+            uid: issueForm.uid,
+            due_date: issueForm.due_date
+        };
+        console.log('Issue Book:', requestBody);
         try {
-            await axios.post(`${BACKEND_URL}/issues`, issueForm);
-            toast.success("Book issued successfully!");
-            setIssueForm({ uid: '', isbn_id: '', library_id: '', due_date: '' });
+            const response = await axios.post(`${BACKEND_URL}/issues`, requestBody);
+            
+            // Check if the message indicates success or failure
+            if (response.data.message === "Book issued successfully") {
+                toast.success("Book issued successfully!");
+                setIssueForm({ uid: '', book_id: '', due_date: '' });
+            } else {
+                // Backend returned an error message with 200 status
+                toast.error(response.data.message);
+            }
         } catch (error) {
             console.error("Error issuing book:", error);
             const errorMessage = error.response?.data?.error || "Failed to issue book";
             toast.error(errorMessage);
+        } finally {
+            setIsSubmittingIssue(false);
         }
     };
 
@@ -101,6 +128,38 @@ export const AdminDashboard = () => {
         } catch (error) {
             console.error("Error adding book:", error);
             toast.error("Failed to add book. Please check the details and try again.");
+        }
+    };
+
+    const handleReturnSubmit = async (e) => {
+        e.preventDefault();
+        if (isSubmittingReturn) return;
+        
+        // Validate form
+        if (!returnForm.book_id) {
+            toast.error("Please enter Book ID");
+            return;
+        }
+        
+        setIsSubmittingReturn(true);
+        console.log('Return Book:', returnForm);
+        try {
+            const response = await axios.patch(`${BACKEND_URL}/issues/${returnForm.book_id}/return`);
+            
+            // Check if the message indicates success or failure
+            if (response.data.message === "Book returned successfully") {
+                toast.success("Book returned successfully!");
+                setReturnForm({ book_id: '' });
+            } else {
+                // Backend returned an error message with 200 status
+                toast.error(response.data.message);
+            }
+        } catch (error) {
+            console.error("Error returning book:", error);
+            const errorMessage = error.response?.data?.error || "Failed to return book";
+            toast.error(errorMessage);
+        } finally {
+            setIsSubmittingReturn(false);
         }
     };
 
@@ -148,6 +207,16 @@ export const AdminDashboard = () => {
                             Issue Book
                         </button>
                         <button
+                            onClick={() => setActiveSection('return')}
+                            className={`px-6 py-4 font-semibold whitespace-nowrap transition flex items-center gap-2 ${activeSection === 'return'
+                                ? 'text-blue-600 border-b-2 border-blue-600'
+                                : 'text-gray-600 hover:text-gray-900'
+                                }`}
+                        >
+                            <BookOpen size={20} />
+                            Return Book
+                        </button>
+                        <button
                             onClick={() => setActiveSection('add')}
                             className={`px-6 py-4 font-semibold whitespace-nowrap transition flex items-center gap-2 ${activeSection === 'add'
                                 ? 'text-blue-600 border-b-2 border-blue-600'
@@ -183,7 +252,7 @@ export const AdminDashboard = () => {
                                             <input
                                                 type="text"
                                                 value={issueForm.uid}
-                                                onChange={(e) => setIssueForm({ ...issueForm, uid: parseInt(e.target.value) })}
+                                                onChange={(e) => setIssueForm({ ...issueForm, uid: e.target.value ? parseInt(e.target.value) : '' })}
                                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                                 placeholder="Enter member ID or email"
                                             />
@@ -191,31 +260,19 @@ export const AdminDashboard = () => {
 
                                         <div>
                                             <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                                Book ISBN
+                                                Book ID
                                             </label>
                                             <input
                                                 type="text"
-                                                value={issueForm.isbn_id}
-                                                onChange={(e) => setIssueForm({ ...issueForm, isbn_id: parseInt(e.target.value) })}
+                                                value={issueForm.book_id}
+                                                onChange={(e) => setIssueForm({ ...issueForm, book_id: e.target.value ? parseInt(e.target.value) : '' })}
                                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                placeholder="Enter book ID or ISBN"
+                                                placeholder="Enter book ID"
                                             />
                                         </div>
                                         <div>
                                             <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                                Library ID
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={issueForm.library_id}
-                                                onChange={(e) => setIssueForm({ ...issueForm, library_id: parseInt(e.target.value) })}
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                placeholder="Enter library ID"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                                Due Date
+                                                Due Date (Optional)
                                             </label>
                                             <input
                                                 type="date"
@@ -227,9 +284,40 @@ export const AdminDashboard = () => {
 
                                         <button
                                             onClick={handleIssueSubmit}
-                                            className="w-full bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-blue-700 transition"
+                                            disabled={isSubmittingIssue}
+                                            className="w-full bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            Issue Book
+                                            {isSubmittingIssue ? 'Issuing...' : 'Issue Book'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeSection === 'return' && (
+                            <div>
+                                <h2 className="text-2xl font-bold text-gray-900 mb-6">Return Book</h2>
+                                <div className="max-w-2xl">
+                                    <div className="space-y-6">
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                Book ID
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={returnForm.book_id}
+                                                onChange={(e) => setReturnForm({ ...returnForm, book_id: e.target.value ? parseInt(e.target.value) : '' })}
+                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                placeholder="Enter book ID"
+                                            />
+                                        </div>
+
+                                        <button
+                                            onClick={handleReturnSubmit}
+                                            disabled={isSubmittingReturn}
+                                            className="w-full bg-green-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {isSubmittingReturn ? 'Returning...' : 'Return Book'}
                                         </button>
                                     </div>
                                 </div>

@@ -148,7 +148,7 @@ export const IssuerDetails = () => {
                           </p>
                           <p className="text-sm text-gray-600 mb-2">
                             <span className="font-semibold">At Library:</span>{' '}
-                            {reservation.name}
+                            {reservation.library_name}
                           </p>
                           <div className="flex flex-wrap gap-4 text-sm">
                             <div>
