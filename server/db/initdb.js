@@ -152,6 +152,7 @@ const createIssues = async () => {
       uid INT NOT NULL,
       issued_on DATE NOT NULL,
       due_date DATE NOT NULL,
+      status VARCHAR(20) DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'RETURNED')),
       FOREIGN KEY(book_id, library_id) REFERENCES CATALOG(book_id, library_id)
         ON UPDATE CASCADE
         ON DELETE CASCADE,
