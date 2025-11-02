@@ -1,2 +1,5 @@
 node_modules/
 .env    
+
+./insertFines.js
+insertFines.js

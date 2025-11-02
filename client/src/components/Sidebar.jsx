@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, Home, LogIn, UserPlus, Shield, Bell, LogOut } from 'lucide-react';
+import { Menu, X, Home, LogIn, UserPlus, Shield, Bell, LogOut, HandCoins } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import useAuthContext from '../hooks/useAuthContext';
 
@@ -28,7 +28,9 @@ const Sidebar = () => {
                 { icon: LogIn, label: 'Candidate Login', href: '/candidate-auth?mode=login' },
                 { icon: Shield, label: 'Admin Login', href: '/admin-auth' }
             ]),
-        { icon: Bell, label: 'Announcements', href: '/#announcements' }
+        { icon: Bell, label: 'Announcements', href: '/#announcements' },
+        { icon: HandCoins, label: 'My Fines', href: '/my-fines' }
+    
     ];
 
     return (
