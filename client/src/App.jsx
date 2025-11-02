@@ -8,6 +8,7 @@ import useAuthContext from './hooks/useAuthContext';
 import DashboardPage from './pages/DashboardPage';
 import { Toaster } from 'sonner'; 
 import MyFinesPage from './pages/MyFinesPage';
+import {AdminDashboard} from "./pages/AdminDashboard";
 
 function App() {
   const { state } = useAuthContext();
@@ -67,7 +68,7 @@ function App() {
         />
         <Route
           path="/admin-home"
-          element={<ProtectedRoute element={<div>Admin Home</div>} requiredRole="ADMIN" />}
+          element={<ProtectedRoute element={<AdminDashboard />} requiredRole="ADMIN" />}
         />
       </Routes>
     </>

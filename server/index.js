@@ -13,6 +13,7 @@ import reservationRoutes from "./routes/reservations.js";
 import fineRoutes from "./routes/fines.js";
 import scheduleFineJob from "./utils/fineCronJob.js";
 import issueRoutes from "./routes/issues.js";
+import memberRoutes from "./routes/members.js";
 
 
 const app = express();
@@ -32,6 +33,8 @@ app.use("/isbn", isbnRoutes);
 app.use("/auth", authRoutes);
 app.use("/reservations", reservationRoutes);
 app.use("/fines", fineRoutes);
+app.use("/members", memberRoutes);
+
 
 
 scheduleFineJob();
