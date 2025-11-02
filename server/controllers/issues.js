@@ -287,9 +287,39 @@ const returnBook = async (req, res) => {
 	}
 };
 
+const getTotalNumIssues = async (req, res) => {
+	try {
+		await connectDB();
+		const total_issues = await sql`
+			SELECT COUNT(*)::int AS total_issues
+			FROM ISSUES;
+		`;
+
+		const overdue_issues = await sql`
+			SELECT COUNT(*)::int AS overdue_issues
+			FROM ISSUES
+			WHERE due_date < CURRENT_DATE
+		`;
+		console.log("Total issues:", total_issues[0].total_issues);
+		console.log("Overdue issues:", overdue_issues[0].overdue_issues);
+		return res.status(200).json({
+			data: {
+				active_issues: total_issues[0].total_issues,
+				overdue_issues: overdue_issues[0].overdue_issues
+			}
+		});
+	} catch (error) {
+		console.error("Error fetching total number of issues:", error);
+		return res.status(500).json({
+			error: "Internal server error"
+		});
+	}
+};
+
 export {
 	getActiveIssuesByUid,
 	getPastIssuesByUid,
 	createIssue,
 	returnBook,
+	getTotalNumIssues
 };
