@@ -6,6 +6,6 @@ const router = express.Router();
 
 router.post("/", createReservation);
 router.get("/:uid", getReservationsByUid);
-router.delete("/:reservation_id", cancelReservation);
+router.delete("/cancel/:reservation_id", cancelReservation);
 
 export default router;

@@ -107,7 +107,7 @@ const createReservation = async (req, res) => {
 const getReservationsByUid = async (req, res) => {
   try {
     await connectDB();
-    const { uid } = req.params;
+    const { uid } = req?.params;
     console.log("Fetching reservations of User:", uid);
     
     // Fetch reservations for this user with book and library details.
@@ -117,14 +117,14 @@ const getReservationsByUid = async (req, res) => {
         r.isbn_id,
         i.title,
         l.name,
-        -- r.reserved_at,
         r.expires_at,
-        r.status
+        r.status,
+        i.author
       FROM RESERVATIONS r
       JOIN ISBN i ON r.isbn_id = i.isbn_id
       JOIN LIBRARY l ON r.library_id = l.library_id
       WHERE r.uid = ${uid}
-      ORDER BY r.reserved_at DESC
+      ORDER BY r.expires_at DESC
     `;
     
     if (!reservationDetails || reservationDetails.length === 0) {
@@ -146,11 +146,12 @@ const updateQueue = async (sql, isbn_id, library_id) => {
   // Count available books in library.
   const availableBooks = await sql`
     SELECT COUNT(*)::int AS count
-    FROM BOOKS
-    WHERE isbn_id = ${isbn_id}
-      AND library_id = ${library_id}
-      AND status = 'AVAILABLE'
+    FROM BOOKS, CATALOG
+    WHERE BOOKS.book_id = CATALOG.book_id
+      AND CATALOG.library_id = ${library_id}
+      AND BOOKS.status = 'AVAILABLE'
   `;
+    
 
   // Count active reservations.
   const activeReservations = await sql`
@@ -176,7 +177,7 @@ const updateQueue = async (sql, isbn_id, library_id) => {
     WHERE isbn_id = ${isbn_id}
       AND library_id = ${library_id}
       AND status = 'WAITLISTED'
-    ORDER BY reserved_at ASC
+    ORDER BY expires_at ASC
     LIMIT ${availableSlots}
   `;
 

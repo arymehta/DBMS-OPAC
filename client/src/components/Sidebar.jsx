@@ -63,7 +63,7 @@ const Sidebar = () => {
                                 </div>
                             </div>
                             <p className="text-xs font-medium text-blue-600 bg-blue-50 px-3 py-1 rounded-full inline-block">
-                                {user?.role === 'ISSUER' ? 'Candidate' : user?.role}
+                                {user?.role === 'ISSUER' ? 'Issuer' : user?.role}
                             </p>
                         </div>
                     )}

@@ -4,7 +4,7 @@ dotenv.config();
 
 const connstring = process.env.DATABASE_URL;
 
-const sql = postgres(connstring);
+const sql = postgres(connstring, { prepare: false });
 
 export const connectDB = async () => {
   try {

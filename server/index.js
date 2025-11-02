@@ -12,6 +12,8 @@ import authRoutes from "./routes/auth.js";
 import reservationRoutes from "./routes/reservations.js";
 import fineRoutes from "./routes/fines.js";
 import scheduleFineJob from "./utils/fineCronJob.js";
+import issueRoutes from "./routes/issues.js";
+
 
 const app = express();
 
@@ -34,6 +36,7 @@ app.use("/fines", fineRoutes);
 
 scheduleFineJob();
 
+app.use("/issues", issueRoutes);
 
 app.get("/", (req, res) => {
   res.send("Welcome to the DBMS OPAC API");
