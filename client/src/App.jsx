@@ -7,6 +7,7 @@ import AdminAuth from './pages/AdminAuth';
 import useAuthContext from './hooks/useAuthContext';
 import DashboardPage from './pages/DashboardPage';
 import { Toaster } from 'sonner'; 
+import MyFinesPage from './pages/MyFinesPage';
 
 function App() {
   const { state } = useAuthContext();
@@ -59,7 +60,7 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/candidate-auth" element={<AuthRoute element={<CandidateAuth />} />} />
         <Route path="/admin-auth" element={<AuthRoute element={<AdminAuth />} />} />
-        
+        <Route path="/my-fines" element={<MyFinesPage />} />
         <Route
           path="/issuer-home"
           element={<ProtectedRoute element={<DashboardPage />} requiredRole="ISSUER" />}
