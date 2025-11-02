@@ -2,49 +2,10 @@ import React, { use } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, BookOpen, Users, Zap } from 'lucide-react';
 import {IssuerDetails} from '../components/IssuerDetails';
-import { useEffect, useState } from 'react';
-import { AuthContext } from '../context/AuthContext';
-import { useContext } from 'react';
-import { BACKEND_URL } from '../config';
-import axios from 'axios';
+;
 
 const Landing = () => {
-  const { state } = useContext(AuthContext);
-  const [reservations, setReservations] = useState([]);
-  const [fines, setFines] = useState([]);
 
-  useEffect(() => {
-    const uid = state.user?.uid;  
-    const getReservations = async () => {
-      try {
-        const response = await axios.get(`${BACKEND_URL}/reservations/${uid}`);
-        if (response.status === 200) {
-          const data = response?.data;
-          setReservations(data);
-        } else {
-          console.error('Failed to fetch reservations');
-        }
-      } catch (error) {
-        console.error('Error fetching reservations:', error);
-      }
-    };
-
-    const getFines = async () => {
-      try {
-        const response = await axios.get(`${BACKEND_URL}/fines`); // replace with actual fines route!
-        if (response.status === 200) {
-          const data = response?.data;
-          setFines(data);
-        } else {
-          console.error('Failed to fetch fines');
-        }
-      } catch (error) {
-        console.error('Error fetching fines:', error);
-      }
-    };
-    getReservations();
-    // getFines();
-  }, []);
 
   const announcements = [
     {
@@ -111,7 +72,7 @@ const Landing = () => {
           </div>
         </div>
 
-        <IssuerDetails reservations={reservations} fines={fines} />
+        <IssuerDetails/>
         <div id="announcements" className="mb-16">
           <h2 className="text-3xl font-bold text-gray-900 mb-8">Announcements</h2>
           <div className="space-y-4">
