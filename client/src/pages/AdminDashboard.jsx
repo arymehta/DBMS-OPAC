@@ -1,4 +1,4 @@
-import { BookOpen, Plus, FileText, Users, Search, Calendar } from 'lucide-react';
+import { BookOpen, Plus, FileText, Users, Calendar } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { BACKEND_URL } from '../config';
@@ -35,6 +35,7 @@ export const AdminDashboard = () => {
     const [numMembers, setNumMembers] = useState(0);
     const [numActiveIssues, setNumActiveIssues] = useState(0);
     const [numOverdueIssues, setNumOverdueIssues] = useState(0);
+    const [issueHistory, setIssueHistory] = useState([]);
 
     useEffect(() => {
         const getDashboardStats = async () => {
@@ -42,10 +43,13 @@ export const AdminDashboard = () => {
                 const membersResponse = await axios.get(`${BACKEND_URL}/members/num-members`);
                 const issuesResponse = await axios.get(`${BACKEND_URL}/issues/total-issues`);
                 const booksResponse = await axios.get(`${BACKEND_URL}/books/get/total-books`);
+                const issueHistoryResponse = await axios.get(`${BACKEND_URL}/issues/issue-history`);
                 setNumBooks(booksResponse.data.data);
                 setNumMembers(membersResponse.data.data);
                 setNumActiveIssues(issuesResponse.data.data.active_issues);
                 setNumOverdueIssues(issuesResponse.data.data.overdue_issues);
+                console.log("Issue History:", issueHistoryResponse.data.data);
+                setIssueHistory(issueHistoryResponse.data.data);
             } catch (error) {
                 console.error("Error fetching dashboard stats:", error);
             }
@@ -69,13 +73,13 @@ export const AdminDashboard = () => {
     const handleIssueSubmit = async (e) => {
         e.preventDefault();
         if (isSubmittingIssue) return;
-        
+
         // Validate form (due_date is optional)
         if (!issueForm.uid || !issueForm.book_id) {
             toast.error("Please fill in Member ID and Book ID");
             return;
         }
-        
+
         setIsSubmittingIssue(true);
         const requestBody = {
             book_id: issueForm.book_id,
@@ -85,7 +89,7 @@ export const AdminDashboard = () => {
         console.log('Issue Book:', requestBody);
         try {
             const response = await axios.post(`${BACKEND_URL}/issues`, requestBody);
-            
+
             // Check if the message indicates success or failure
             if (response.data.message === "Book issued successfully") {
                 toast.success("Book issued successfully!");
@@ -107,7 +111,7 @@ export const AdminDashboard = () => {
         e.preventDefault();
         console.log('Add Book:', bookForm);
         try {
-            for(let i=0;i<(bookForm.copies || 1);i++) {
+            for (let i = 0; i < (bookForm.copies || 1); i++) {
                 await axios.post(`${BACKEND_URL}/isbn/add`, bookForm);
             }
             toast.success("Book added successfully!");
@@ -134,18 +138,18 @@ export const AdminDashboard = () => {
     const handleReturnSubmit = async (e) => {
         e.preventDefault();
         if (isSubmittingReturn) return;
-        
+
         // Validate form
         if (!returnForm.book_id) {
             toast.error("Please enter Book ID");
             return;
         }
-        
+
         setIsSubmittingReturn(true);
         console.log('Return Book:', returnForm);
         try {
             const response = await axios.patch(`${BACKEND_URL}/issues/${returnForm.book_id}/return`);
-            
+
             // Check if the message indicates success or failure
             if (response.data.message === "Book returned successfully") {
                 toast.success("Book returned successfully!");
@@ -226,28 +230,18 @@ export const AdminDashboard = () => {
                             <Plus size={20} />
                             Add Book
                         </button>
-                        <button
-                            onClick={() => setActiveSection('search')}
-                            className={`px-6 py-4 font-semibold whitespace-nowrap transition flex items-center gap-2 ${activeSection === 'search'
-                                ? 'text-blue-600 border-b-2 border-blue-600'
-                                : 'text-gray-600 hover:text-gray-900'
-                                }`}
-                        >
-                            <Search size={20} />
-                            Search
-                        </button>
                     </div>
 
                     {/* Tab Content */}
-                    <div className="p-8">
+                    <div className="w-full p-8">
                         {activeSection === 'issue' && (
                             <div>
-                                <h2 className="text-2xl font-bold text-gray-900 mb-6">Issue Book to Member</h2>
-                                <div className="max-w-2xl">
+                                <h2 className="text-center text-2xl font-bold text-gray-900 mb-6">Issue Book to Member</h2>
+                                <div className="max-w-2xl mx-auto">
                                     <div className="space-y-6">
                                         <div>
                                             <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                                Member ID 
+                                                Member ID
                                             </label>
                                             <input
                                                 type="text"
@@ -296,8 +290,8 @@ export const AdminDashboard = () => {
 
                         {activeSection === 'return' && (
                             <div>
-                                <h2 className="text-2xl font-bold text-gray-900 mb-6">Return Book</h2>
-                                <div className="max-w-2xl">
+                                <h2 className="text-center text-2xl font-bold text-gray-900 mb-6">Return Book</h2>
+                                <div className="max-w-2xl mx-auto">
                                     <div className="space-y-6">
                                         <div>
                                             <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -324,7 +318,7 @@ export const AdminDashboard = () => {
                             </div>
                         )}
 
-{/*       isbn_id: '',
+                        {/*       isbn_id: '',
       title : '',
       author: ''    ,
       genre: '',
@@ -337,8 +331,8 @@ export const AdminDashboard = () => {
       uid: '' */}
                         {activeSection === 'add' && (
                             <div>
-                                <h2 className="text-2xl font-bold text-gray-900 mb-6">Add New Book</h2>
-                                <div className="max-w-3xl">
+                                <h2 className="text-center text-2xl font-bold text-gray-900 mb-6">Add New Book</h2>
+                                <div className="max-w-3xl mx-auto ">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
                                             <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -500,65 +494,49 @@ export const AdminDashboard = () => {
                                 </div>
                             </div>
                         )}
-
-                        {activeSection === 'search' && (
-                            <div>
-                                <h2 className="text-2xl font-bold text-gray-900 mb-6">Search Books or Members</h2>
-                                <div className="max-w-2xl">
-                                    <div className="relative mb-6">
-                                        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                                        <input
-                                            type="text"
-                                            className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            placeholder="Search by title, author, ISBN, or member name..."
-                                        />
-                                    </div>
-                                    <div className="flex gap-4">
-                                        <button className="flex-1 bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-blue-700 transition">
-                                            Search Books
-                                        </button>
-                                        <button className="flex-1 bg-purple-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-purple-700 transition">
-                                            Search Members
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
                     </div>
                 </div>
 
                 {/* Recent Issues */}
                 <div className="bg-white rounded-xl border border-gray-200 shadow-lg p-8">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Recent Issues</h2>
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead>
-                                <tr className="border-b border-gray-200">
-                                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Member</th>
-                                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Book</th>
-                                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Issue Date</th>
-                                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Due Date</th>
-                                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {recentIssues.map((issue) => (
-                                    <tr key={issue.id} className="border-b border-gray-100 hover:bg-gray-50">
-                                        <td className="py-3 px-4">{issue.member}</td>
-                                        <td className="py-3 px-4">{issue.book}</td>
-                                        <td className="py-3 px-4 text-gray-600">{issue.date}</td>
-                                        <td className="py-3 px-4 text-gray-600">{issue.due}</td>
-                                        <td className="py-3 px-4">
-                                            <button className="text-blue-600 hover:text-blue-700 font-semibold">
-                                                View Details
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+    <h2 className="text-2xl font-bold text-gray-900 mb-6">Recent Issues</h2>
+    <div className="overflow-x-auto">
+        <table className="w-full">
+            <thead>
+                <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Member ID</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Book ID</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Issue Date</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Due Date</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {issueHistory.map((issue, index) => (
+                    <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="py-3 px-4">{issue.uid}</td>
+                        <td className="py-3 px-4">{issue.book_id}</td>
+                        <td className="py-3 px-4 text-gray-600">
+                            {new Date(issue.issued_on).toLocaleDateString()}
+                        </td>
+                        <td className="py-3 px-4 text-gray-600">
+                            {new Date(issue.due_date).toLocaleDateString()}
+                        </td>
+                        <td className="py-3 px-4">
+                            <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                                issue.status === 'ACTIVE' 
+                                    ? 'bg-green-100 text-green-700' 
+                                    : 'bg-gray-100 text-gray-700'
+                            }`}>
+                                {issue.status}
+                            </span>
+                        </td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+    </div>
+</div>
             </div>
         </div>
     );

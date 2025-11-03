@@ -113,7 +113,7 @@ const createIssue = async (req, res) => {
 			}
 
 			const { isbn_id, library_id } = bookDetails[0];
-			
+			console.log(isbn_id, library_id, uid);
 			// Check if user has an active reservation for this book at this library.
 			const existingReservation = await sql`
 				SELECT *
@@ -122,7 +122,7 @@ const createIssue = async (req, res) => {
 					AND isbn_id = ${isbn_id}
 					AND library_id = ${library_id}
 			`;
-			
+			console.log("existing",existingReservation)
 			// Case 1: User has reserved the book before
 			if(existingReservation.length > 0) {
 				// User is still in waitlist, invalid issue
@@ -275,13 +275,15 @@ const getTotalNumIssues = async (req, res) => {
 		await connectDB();
 		const total_issues = await sql`
 			SELECT COUNT(*)::int AS total_issues
-			FROM ISSUES;
+			FROM ISSUES
+			WHERE status = 'ACTIVE';
 		`;
 
 		const overdue_issues = await sql`
 			SELECT COUNT(*)::int AS overdue_issues
 			FROM ISSUES
-			WHERE due_date < CURRENT_DATE
+			WHERE status = 'ACTIVE'
+			AND due_date < CURRENT_DATE
 		`;
 		console.log("Total issues:", total_issues[0].total_issues);
 		console.log("Overdue issues:", overdue_issues[0].overdue_issues);
@@ -299,10 +301,39 @@ const getTotalNumIssues = async (req, res) => {
 	}
 };
 
+
+const getIssueHistory = async (req, res) => {
+	try {
+		await connectDB();
+		const issueHistory = await sql`
+			SELECT
+				i.uid,	
+				b.book_id,
+				i.issued_on,
+				i.due_date,
+				i.status
+			FROM ISSUES i
+			JOIN BOOKS b ON i.book_id = b.book_id
+			ORDER BY i.issued_on DESC
+			LIMIT 10
+		`;
+
+		return res.status(200).json({
+			data: issueHistory
+		});
+	} catch (error) {
+		console.error("Error fetching issue history:", error);
+		return res.status(500).json({
+			error: "Internal server error"
+		});
+	}
+};
+
 export {
 	getActiveIssuesByUid,
 	getPastIssuesByUid,
 	createIssue,
 	returnBook,
-	getTotalNumIssues
+	getTotalNumIssues,
+	getIssueHistory
 };
