@@ -530,7 +530,7 @@ export const AdminDashboard = () => {
                             }`}>
                                 {issue.status}
                             </span>
-                        </td>
+                        </td>   
                     </tr>
                 ))}
             </tbody>

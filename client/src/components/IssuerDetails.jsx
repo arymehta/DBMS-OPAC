@@ -11,7 +11,8 @@ export const IssuerDetails = () => {
   // Default dummy data if props not provided
   const { state } = useContext(AuthContext);
   const [reservations, setReservations] = useState([]);
-  const [issues, setIssues] = useState([]);
+  const [activeIssues, setActiveIssues] = useState([]);
+  const [previousIssues, setPreviousIssues] = useState([]);
 
   useEffect(() => {
     const uid = state.user?.uid;
@@ -29,25 +30,38 @@ export const IssuerDetails = () => {
       }
     };
 
-    const getIssues = async () => {
+    const getActiveIssues = async () => {
       try {
         const response = await axios.get(`${BACKEND_URL}/issues/active/${uid}`);
         if (response.status === 200) {
           const data = response?.data;
-          console.log("Issues data:", data);
-          setIssues(data);
+          console.log("activeIssues data:", data);
+          setActiveIssues(data);
         } else {
-          console.error('Failed to fetch issues');
+          console.error('Failed to fetch activeIssues');
         }
       } catch (error) {
-        console.error('Error fetching issues:', error);
+        console.error('Error fetching activeIssues:', error);
       }
     };
 
-
-
+    const getPreviousIssues = async () => {
+      try {
+        const response = await axios.get(`${BACKEND_URL}/issues/past/${uid}`);
+        if (response.status === 200) {
+          const data = response?.data;
+          console.log("previousIssues data:", data);
+          setPreviousIssues(data);
+        } else {
+          console.error('Failed to fetch previousIssues');
+        }
+      } catch (error) {
+        console.error('Error fetching previousIssues:', error);
+      }
+    };
     getReservations();
-    getIssues();
+    getActiveIssues();
+    getPreviousIssues();
   }, []);
 
   const cancelReservation = async (reservationId) => {
@@ -58,8 +72,10 @@ export const IssuerDetails = () => {
         }
       });
       console.log("Cancel reservation response:", response.data);
+      toast.success("Reservation canceled successfully");
     } catch (error) {
       console.error("Error canceling reservation:", error);
+      toast.error("Failed to cancel reservation");
     }
     setReservations(reservations.filter(reservation => reservation.reservation_id !== reservationId));
   };
@@ -82,7 +98,7 @@ export const IssuerDetails = () => {
     }
   ];
 
-  const defaultIssues = [
+  const defaultActiveIssues = [
     {
       id: 1,
       title: 'Clean Code',
@@ -102,14 +118,14 @@ export const IssuerDetails = () => {
   ];
 
   const reservationData = reservations || defaultReservations;
-  const issueData = issues || defaultIssues;
-
+  const issueData = activeIssues || defaultActiveIssues;
+  const previousIssueData = previousIssues || defaultActiveIssues;
   return (
     <>
       <div className="bg-white rounded-xl border border-gray-200 shadow-lg">
         {/* Tab Navigation */}
         <div className="flex border-b border-gray-200 overflow-x-auto">
-          {['Reservations', 'Issues'].map((tab) => (
+          {['Reservations', 'Active Issues', 'Previous Issues'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab.toLowerCase())}
@@ -183,7 +199,7 @@ export const IssuerDetails = () => {
             </div>
           )}
 
-          {activeTab === 'issues' && (
+          {activeTab === 'active issues' && (
             <div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Active Issues</h3>
               {issueData.length === 0 ? (
@@ -225,6 +241,40 @@ export const IssuerDetails = () => {
                               ) : (
                                 <span className="font-semibold text-red-600">Overdue : {moment(issue?.due_date).diff(moment(issue?.issued_on), 'days')} days</span>
                               )}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {activeTab === 'previous issues' && (
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Previous Issues</h3>
+              {issueData.length === 0 ? (
+                <p className="text-gray-600">No previous issues.</p>
+              ) : (
+                <div className="space-y-4">
+                  {previousIssueData.map((issue) => (
+                    <div
+                      key={issue.id}
+                      className="border border-gray-200 rounded-lg p-4 hover:border-red-300 transition"
+                    >
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div className="flex-1">
+                          <h4 className="font-bold text-gray-900 text-lg mb-1">
+                            {issue.title}
+                          </h4>
+                          <p className="text-sm text-gray-600 mb-2">
+                            {issue.library_name}
+                          </p>
+                          <div className="flex flex-wrap gap-4 text-sm">
+                            <span className="text-gray-600">
+                              <span className="font-semibold">Issued On:</span>{' '}
+                              {moment(issue?.issued_on).format("Do MMMM, YYYY, h:mm a")}
                             </span>
                           </div>
                         </div>
