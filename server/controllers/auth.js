@@ -11,6 +11,45 @@ const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString()
 const addMinutesUTC = (date, minutes) => new Date(date.getTime() + minutes * 60000);
 const addMinutes = (date, minutes) => new Date(date.getTime() + minutes * 60000);
 
+const adminSignup = async (req, res) => {
+	try {
+		const { name, email, password } = req.body;
+
+		const authHeader = req.headers['authorization'] || '';
+		const token = authHeader.replace('Bearer ', '').trim();
+
+		if (token !== process.env.SUPER_ADMIN_TOKEN) {
+			return res.status(403).json({ message: 'Unauthorized to create admin users' });
+		}
+
+		const [existingUser] = await sql`SELECT * FROM USERS WHERE email = ${email}`;
+		if (existingUser) {
+			if (existingUser.is_verified) {
+				return res.status(400).json({ message: 'User already exists. Please login.' });
+			} else {
+				await sql`DELETE FROM OTP WHERE uid = ${existingUser.uid}`;
+				await sql`DELETE FROM USERS WHERE uid = ${existingUser.uid}`;
+			}
+		}
+
+		const passwordHash = await bcrypt.hash(password, 10);
+		const [user] = await sql`
+			INSERT INTO USERS (name, email, password_hash, is_verified, role)
+			VALUES (${name}, ${email}, ${passwordHash}, false, 'ADMIN') RETURNING uid, email, name, role;
+		`;
+
+		const adminDetails = await sql`
+			INSERT INTO ADMIN_DETAILS (uid)
+			VALUES (${user.uid})
+			RETURNING uid;
+		`;
+
+	} catch (e) {
+		console.error(e);
+		res.status(500).json({ message: 'Admin signup failed', error: e.message });
+	}
+}
+
 const signup = async (req, res) => {
 	try {
 		const { name, email, password, role } = req.body;
@@ -155,6 +194,10 @@ const login = async (req, res) => {
 		const isMatch = await bcrypt.compare(password, user.password_hash);
 		if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
+		if (!user.is_verified) {
+			return res.status(403).json({ message: 'User not verified. Please register again!' });
+		}
+
 		const token = generateToken(user.uid);
 		res.json({ token, user: { uid: user.uid, name: user.name, email: user.email, role: user.role } });
 	} catch (err) {
@@ -226,9 +269,9 @@ const checkAuth = async (req, res) => {
 		}
 
 		const decoded = jwt.verify(token, JWT_SECRET);
-		
+
 		const [user] = await sql`SELECT uid, name, email, role, is_verified FROM USERS WHERE uid = ${decoded.uid}`;
-		
+
 		if (!user) {
 			return res.status(404).json({ message: 'User not found' });
 		}
@@ -237,7 +280,7 @@ const checkAuth = async (req, res) => {
 			return res.status(403).json({ message: 'User not verified' });
 		}
 
-		res.json({ 
+		res.json({
 			message: 'Token is valid',
 			data: {
 				uid: user.uid,
@@ -266,5 +309,6 @@ export {
 	checkAuth,
 	login,
 	requestResetPassword,
-	confirmResetPassword
+	confirmResetPassword,
+	adminSignup
 };
