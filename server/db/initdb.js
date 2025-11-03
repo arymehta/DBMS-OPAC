@@ -219,7 +219,7 @@ const createOtpTable = async () => {
       uid INT REFERENCES USERS(uid) ON DELETE CASCADE,
       otp_hash TEXT NOT NULL,
       purpose VARCHAR(20) CHECK (purpose IN ('SIGNUP', 'RESET_PASSWORD')) NOT NULL,
-      expires_at TIMESTAMP NOT NULL,
+      expires_at TIMESTAMPTZ NOT NULL,
       verified BOOLEAN DEFAULT FALSE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
