@@ -1,0 +1,308 @@
+import sql, { connectDB } from "../db/dbconn.js";
+import { getExpirationDate, updateQueue } from "./reservations.js"
+
+const getActiveIssuesByUid = async (req, res) => {
+	try {
+		const { uid } = req.params
+
+		if (!uid) {
+			return res.status(400).json({
+				error: "Missing required field: uid"
+			});
+		}
+
+		await connectDB();
+		const issues = await sql`
+			SELECT
+				iss.book_id,
+				i.isbn_id,
+				i.title,
+				i.author,
+				l.name AS library_name,
+				iss.issued_on,
+				iss.due_date,
+				iss.uid,
+				COALESCE(f.amount, 0) AS fine_amount
+			FROM ISSUES iss
+			JOIN BOOKS b ON iss.book_id = b.book_id
+			JOIN ISBN i ON b.isbn_id = i.isbn_id
+			JOIN CATALOG c ON b.book_id = c.book_id
+			JOIN LIBRARY l ON c.library_id = l.library_id
+			LEFT JOIN FINE f ON iss.issue_id = f.issue_id
+			WHERE iss.uid = ${uid}
+				AND iss.status = 'ACTIVE'
+			ORDER BY iss.issued_on DESC
+		`;
+		return res.status(200).json(issues);
+		
+	} catch (error) {
+		console.error("Error fetching active issues:", error);
+		return res.status(500).json({
+			error: "Internal server error"
+		});
+	}
+};
+
+const getPastIssuesByUid = async (req, res) => {
+	try {
+		const { uid } = req.params
+
+		if (!uid) {
+			return res.status(400).json({
+				error: "Missing required field: uid"
+			});
+		}
+
+		await connectDB();
+		const issues = await sql`
+			SELECT
+				i.isbn_id,
+				i.title,
+				i.author,
+				l.name AS library_name,
+				iss.issued_on,
+				iss.due_date,
+				COALESCE(f.amount, 0) AS fine_amount
+			FROM ISSUES iss
+			JOIN BOOKS b ON iss.book_id = b.book_id
+			JOIN ISBN i ON b.isbn_id = i.isbn_id
+			JOIN CATALOG c ON b.book_id = c.book_id
+			JOIN LIBRARY l ON c.library_id = l.library_id
+			LEFT JOIN FINE f ON iss.issue_id = f.issue_id
+			WHERE iss.uid = ${uid}
+				AND iss.status = 'RETURNED'
+			ORDER BY iss.issued_on DESC
+		`;
+		return res.status(200).json(issues);
+		
+	} catch (error) {
+		console.error("Error fetching past issues:", error);
+		return res.status(500).json({
+			error: "Internal server error"
+		});
+	}
+};
+
+const createIssue = async (req, res) => {
+	try {
+		const { book_id, uid, due_date } = req.body;
+		
+		if(!book_id || !uid) {
+			return res.status(400).json({
+				error: "Missing required fields: book_id, uid",
+			})
+		}
+		
+		await connectDB();
+		
+		const message = await sql.begin(async (sql) => {
+			// Get book details for given book_id.
+			const bookDetails = await sql`
+				SELECT b.book_id, b.isbn_id, c.library_id, b.status
+				FROM BOOKS b
+				JOIN CATALOG C ON b.book_id = c.book_id
+				WHERE b.book_id = ${book_id}
+			`
+
+			if (bookDetails.length === 0) {
+				return "Book not found"
+			}
+
+			if (bookDetails[0].status === 'ISSUED') {
+				return "Book already issued"
+			}
+
+			const { isbn_id, library_id } = bookDetails[0];
+			
+			// Check if user has an active reservation for this book at this library.
+			const existingReservation = await sql`
+				SELECT *
+				FROM RESERVATIONS
+				WHERE uid = ${uid}
+					AND isbn_id = ${isbn_id}
+					AND library_id = ${library_id}
+			`;
+			
+			// Case 1: User has reserved the book before
+			if(existingReservation.length > 0) {
+				// User is still in waitlist, invalid issue
+				if(existingReservation[0].status === 'WAITLISTED') {
+					return "User is in waitlist. Cannot issue book."
+				}
+				
+				// User has a valid reservation. Proceed with issue.
+				// Delete the reservation
+				await sql`
+					DELETE FROM RESERVATIONS
+					WHERE reservation_id = ${existingReservation[0].reservation_id}
+				`;
+				
+				// Update reservation queue.
+				await updateQueue(sql, isbn_id, library_id);
+			}
+			
+			// Case 2: User hasn't reserved book (walk-in issue).
+			// Count available copies left in the library.
+			const remainingAvailableCopies = await sql`
+				SELECT COUNT(*)::int AS count
+				FROM BOOKS b
+				JOIN CATALOG c ON b.book_id = c.book_id
+				WHERE b.isbn_id = ${isbn_id}
+					AND c.library_id = ${library_id}
+					AND b.status = 'AVAILABLE'
+					AND b.book_id != ${book_id}
+			`;
+			
+			// Count number of reservations for this book.
+			const totalReservations = await sql`
+				SELECT COUNT(*)::int AS count
+				FROM RESERVATIONS
+				WHERE isbn_id = ${isbn_id}
+					AND library_id = ${library_id}
+			`;
+			
+			// Check if enough copies are available in the library for reserved users.
+			if(remainingAvailableCopies[0].count < totalReservations[0].count) {
+				return "All copies of this book are currently reserved."
+			}
+			
+			// Walk-in issue allowed.
+			const issued_on = new Date();
+			// Use provided due_date or calculate default (30 days)
+			let finalDueDate;
+			if (due_date) {
+				finalDueDate = new Date(due_date);
+			} else {
+				const ISSUE_PERIOD = 30;
+				finalDueDate = getExpirationDate(ISSUE_PERIOD);
+			}
+			
+			await sql`
+				INSERT INTO ISSUES (book_id, library_id, uid, issued_on, due_date)
+				VALUES (${book_id}, ${library_id}, ${uid}, ${issued_on}, ${finalDueDate})
+			`;
+			// Update book status to ISSUED
+			await sql`
+				UPDATE BOOKS
+				SET status = 'ISSUED'
+				WHERE book_id = ${book_id}
+			`;
+
+			return "Book issued successfully"
+		});
+		
+		return res.status(200).json({
+			message
+		});
+	} catch (error) {
+		console.error("Error issuing book:", error);
+		return res.status(500).json({
+			error: "Internal server error"
+		});
+	}
+}
+
+// Return a book at the library counter
+const returnBook = async (req, res) => {
+	try {
+		const { book_id } = req.params;
+		
+		if(!book_id) {
+			return res.status(400).json({
+				error: "Missing required fields: book_id"
+			});
+		}
+		
+		await connectDB();
+		const message = await sql.begin(async (sql) => {
+			// Get book details
+			const bookDetails = await sql`
+				SELECT
+					b.isbn_id,
+					c.library_id,
+					b.status
+				FROM BOOKS b
+				JOIN CATALOG c ON b.book_id = c.book_id
+				WHERE b.book_id = ${book_id}
+			`;
+
+			if (bookDetails.length === 0) {
+				return "Book not found"
+			}
+
+			if(bookDetails[0].status === 'AVAILABLE') {
+				return "Book is not currently issued"
+			}
+
+			const { isbn_id, library_id } = bookDetails[0];
+
+			// Accept return and mark book as available.
+			await sql`
+				UPDATE BOOKS
+				SET status = 'AVAILABLE'
+				WHERE book_id = ${book_id}
+			`;
+
+			// TODO: Late fees handling
+
+			// Update the issue record
+			await sql`
+				UPDATE ISSUES
+				SET status = 'RETURNED'
+				WHERE book_id = ${book_id}
+					AND status = 'ACTIVE'
+			`;
+
+			// Update the reservation queue.
+			await updateQueue(sql, isbn_id, library_id);
+
+			return "Book returned successfully"
+		});
+
+		return res.status(200).json({
+			message
+		});
+	} catch (error) {
+		console.error("Error returning book:", error);
+		return res.status(500).json({
+			error: "Internal server error"
+		});
+	}
+};
+
+const getTotalNumIssues = async (req, res) => {
+	try {
+		await connectDB();
+		const total_issues = await sql`
+			SELECT COUNT(*)::int AS total_issues
+			FROM ISSUES;
+		`;
+
+		const overdue_issues = await sql`
+			SELECT COUNT(*)::int AS overdue_issues
+			FROM ISSUES
+			WHERE due_date < CURRENT_DATE
+		`;
+		console.log("Total issues:", total_issues[0].total_issues);
+		console.log("Overdue issues:", overdue_issues[0].overdue_issues);
+		return res.status(200).json({
+			data: {
+				active_issues: total_issues[0].total_issues,
+				overdue_issues: overdue_issues[0].overdue_issues
+			}
+		});
+	} catch (error) {
+		console.error("Error fetching total number of issues:", error);
+		return res.status(500).json({
+			error: "Internal server error"
+		});
+	}
+};
+
+export {
+	getActiveIssuesByUid,
+	getPastIssuesByUid,
+	createIssue,
+	returnBook,
+	getTotalNumIssues
+};

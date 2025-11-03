@@ -108,6 +108,7 @@ const createFine = async () => {
       amount DECIMAL(4,2) DEFAULT 0.0,
       paid_status BOOLEAN DEFAULT FALSE,
       paid_date DATE,
+      sbi_dtu VARCHAR(50),
       reason VARCHAR(255),
       FOREIGN KEY (issue_id) REFERENCES ISSUES(issue_id)
         ON UPDATE CASCADE
@@ -140,25 +141,6 @@ const createCatalog = async () => {
   return catalog
 }
 
-// One-many relation that relating Books(Physical copy) to ISBN number
-// const createBookDetails = async () => {
-//     const bookDetails = await sql`
-//     CREATE TABLE IF NOT EXISTS BOOK_DETAILS
-//     (
-//       isbn_id BIGINT NOT NULL,
-//       book_id INT NOT NULL,
-//       PRIMARY KEY(book_id),
-//       FOREIGN KEY (isbn_id) REFERENCES ISBN(isbn_id)
-//         ON DELETE CASCADE
-//         ON UPDATE RESTRICT,
-//       FOREIGN KEY (book_id) REFERENCES BOOKS(book_id)
-//         ON DELETE CASCADE
-//         ON UPDATE CASCADE
-//     )
-//   `
-//     return bookDetails
-// }
-
 // Every issue is associated with a unique entry of catalog
 const createIssues = async () => {
   const issues = await sql`
@@ -170,6 +152,7 @@ const createIssues = async () => {
       uid INT NOT NULL,
       issued_on DATE NOT NULL,
       due_date DATE NOT NULL,
+      status VARCHAR(20) DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'RETURNED')),
       FOREIGN KEY(book_id, library_id) REFERENCES CATALOG(book_id, library_id)
         ON UPDATE CASCADE
         ON DELETE CASCADE,
@@ -196,8 +179,8 @@ const createReservations = async () => {
       isbn_id VARCHAR(17) NOT NULL,
       library_id INT NOT NULL,
       uid INT NOT NULL,
-      reserved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      status VARCHAR(10) CHECK (status IN ('ACTIVE', 'CANCELLED', 'ISSUED')) DEFAULT 'ACTIVE',
+      expires_at TIMESTAMP DEFAULT NULL, -- if reservation is waitlisted, default value is NULL, when activated, set expiry time
+      status VARCHAR(10) CHECK (status IN ('RESERVED', 'WAITLISTED')) DEFAULT 'WAITLISTED',
       FOREIGN KEY(isbn_id) REFERENCES ISBN(isbn_id)
         ON UPDATE CASCADE
         ON DELETE RESTRICT,
@@ -221,8 +204,18 @@ const createOtpTable = async () => {
       purpose VARCHAR(20) CHECK (purpose IN ('SIGNUP', 'RESET_PASSWORD')) NOT NULL,
       expires_at TIMESTAMPTZ NOT NULL,
       verified BOOLEAN DEFAULT FALSE,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
+      created_at TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
+    );
+
+
+  `;
+};
+
+const handleOTPTimeZone = async () => {
+  return await sql`
+      ALTER TABLE OTP
+      ALTER COLUMN expires_at TYPE TIMESTAMPTZ
+      USING expires_at AT TIME ZONE 'UTC';
   `;
 };
 
@@ -290,6 +283,9 @@ export const initDB = async () => {
     if (!dataExists) {
       console.log("Populating database with initial data...");
       await populateDB()
+    }
+    else {
+      await handleOTPTimeZone();
     }
 
 
