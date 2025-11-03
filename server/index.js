@@ -36,8 +36,6 @@ app.use("/reservations", reservationRoutes);
 app.use("/fines", fineRoutes);
 app.use("/members", memberRoutes);
 
-
-
 scheduleFineJob();
 
 app.use("/issues", issueRoutes);
