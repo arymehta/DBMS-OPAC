@@ -6,11 +6,13 @@ import {
   requestResetPassword,
   confirmResetPassword,
   resendOtp,
-  checkAuth
+  checkAuth,
+  adminSignup
 } from '../controllers/auth.js';
 
 const router = express.Router();
 
+router.post('/admin/register', adminSignup);
 
 router.post('/signup', signup);
 router.post('/verify-otp', verifyOtp);
