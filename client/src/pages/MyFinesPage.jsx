@@ -10,6 +10,7 @@ import {
     AlertCircle,
 } from "lucide-react";
 import useAuthContext from '../hooks/useAuthContext';
+import { BACKEND_URL } from "../config"; 
 
 const MyFinesPage = () => {
     const { state } = useAuthContext();

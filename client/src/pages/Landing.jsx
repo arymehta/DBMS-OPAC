@@ -2,7 +2,7 @@ import React, { use } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, BookOpen, Users, Zap } from 'lucide-react';
 import {IssuerDetails} from '../components/IssuerDetails';
-;
+import { BACKEND_URL } from "../config"; 
 
 const Landing = () => {
 

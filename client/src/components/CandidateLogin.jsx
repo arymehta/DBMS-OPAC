@@ -6,6 +6,7 @@ import OtpModal from './OtpModal';
 import ResetPasswordModal from './ResetPasswordModal';
 import { BACKEND_URL } from '../config';
 import useAuthContext from '../hooks/useAuthContext';
+import { BACKEND_URL } from "../config"; 
 
 const CandidateLogin = () => {
   const [email, setEmail] = useState('');

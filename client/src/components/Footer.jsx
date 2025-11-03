@@ -1,4 +1,5 @@
 import { Github, Mail, Linkedin } from 'lucide-react';
+import { BACKEND_URL } from "../config"; 
 
 const Footer = () => {
   return (

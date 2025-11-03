@@ -1,4 +1,6 @@
 import { Bell } from 'lucide-react';
+import { BACKEND_URL } from "../config"; 
+
 
 const Announcements = () => {
   const announcements = [

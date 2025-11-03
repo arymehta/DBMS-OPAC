@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X, LogOut } from 'lucide-react';
 import useAuthContext from '../hooks/useAuthContext';
+import { BACKEND_URL } from "../config"; 
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);

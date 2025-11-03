@@ -8,6 +8,7 @@ import {
   ChevronLeft as IconChevronLeft,
   ChevronRight as IconChevronRight,
 } from "lucide-react";
+import { BACKEND_URL } from "../config"; 
 
 const DashboardPage = () => {
   const [books, setBooks] = useState([]);

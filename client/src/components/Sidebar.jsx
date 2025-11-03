@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Menu, X, Home, LogIn, UserPlus, Shield, Bell, LogOut, HandCoins } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import useAuthContext from '../hooks/useAuthContext';
+import { BACKEND_URL } from "../config"; 
+
 
 const Sidebar = () => {
     const [isOpen, setIsOpen] = useState(false);
