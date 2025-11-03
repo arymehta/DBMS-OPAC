@@ -66,7 +66,7 @@ export const IssuerDetails = () => {
 
   const cancelReservation = async (reservationId) => {
     try {
-      const response = await axios.delete(`http://localhost:3000/reservations/cancel/${reservationId}`, {
+      const response = await axios.delete(`${BACKEND_URL}/reservations/cancel/${reservationId}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }

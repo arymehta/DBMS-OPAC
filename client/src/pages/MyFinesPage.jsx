@@ -25,7 +25,7 @@ const MyFinesPage = () => {
             console.log("Fetching fines for user ID:", state.user);
             
             try {
-                const response = await axios.get(`http://localhost:3000/fines/user/${state.user.uid}`);
+                const response = await axios.get(`${BACKEND_URL}/fines/user/${state.user.uid}`);
                 setFines(response.data ?? []);
             } catch (err) {
                 console.error("Error fetching fines:", err);
@@ -46,7 +46,7 @@ const MyFinesPage = () => {
 
         setProcessing(true);
         try {
-            await axios.post(`http://localhost:3000/fines/pay/${fineId}`, {
+            await axios.post(`${BACKEND_URL}/fines/pay/${fineId}`, {
                 sbi_dtu: sbiDtu
             });
             setFines((prev) =>

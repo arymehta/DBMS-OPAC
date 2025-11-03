@@ -28,7 +28,7 @@ const DashboardPage = () => {
     const fetchBooks = async () => {
       try {
         setLoading(true);
-        const response = await axios.get("http://localhost:3000/catalog/");
+        const response = await axios.get(`${BACKEND_URL}/catalog/`);
         setBooks(response.data ?? []);
       } catch (error) {
         console.error("Error fetching books:", error);
@@ -43,7 +43,7 @@ const DashboardPage = () => {
     e.preventDefault();
     try {
       setLoading(true);
-      const response = await axios.post("http://localhost:3000/catalog/", filters);
+      const response = await axios.post(`${BACKEND_URL}/catalog/`, filters);
       console.log("Filtered data:", response.data);
       setBooks(response?.data ?? []);
       setCurrentPage(1);
@@ -73,7 +73,7 @@ const DashboardPage = () => {
     setShowOnlyAvailable(false);
     setCurrentPage(1);
     try {
-      const response = await axios.get("http://localhost:3000/catalog/");
+      const response = await axios.get(`${BACKEND_URL}/catalog/`);
       setBooks(response?.data ?? []);
     } catch (err) {
       console.error("Error resetting filters:", err);
