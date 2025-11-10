@@ -73,11 +73,11 @@ export const IssuerDetails = () => {
       });
       console.log("Cancel reservation response:", response.data);
       toast.success("Reservation canceled successfully");
+      setReservations(reservations.filter(reservation => reservation.reservation_id !== reservationId));
     } catch (error) {
       console.error("Error canceling reservation:", error);
       toast.error("Failed to cancel reservation");
     }
-    setReservations(reservations.filter(reservation => reservation.reservation_id !== reservationId));
   };
   const defaultReservations = [
     {
