@@ -141,7 +141,7 @@ const createCatalog = async () => {
   return catalog
 }
 
-// Every issue is associated with a unique entry of catalog
+// Every issue is associated with a unique entry of catalog (as a physical copy of a book is allotted to an issuer)
 const createIssues = async () => {
   const issues = await sql`
     CREATE TABLE IF NOT EXISTS ISSUES
@@ -171,7 +171,7 @@ const createIssues = async () => {
   return issues
 }
 
-// Users can reserve books (first-come, first-served)
+// Users can reserve books (first-come, first-serve)
 const createReservations = async () => {
   const reservations = await sql`
     CREATE TABLE IF NOT EXISTS RESERVATIONS (
@@ -194,6 +194,9 @@ const createReservations = async () => {
   `
   return reservations
 }
+
+
+// =========== AUTHENTICATION SCHEMAS ==============
 
 const createOtpTable = async () => {
   return await sql`
@@ -219,16 +222,6 @@ const handleOTPTimeZone = async () => {
   `;
 };
 
-
-
-// export const deleteDB = async () => {
-//     try {
-//         await sql `DROP TABLE  LIBRARY, BOOKS, ISBN, BOOK_DETAILS, CATALOG, ISSUES;`
-//     } catch (error) {
-//         console.error("Error deleting tables:", error)
-//     }   
-//     return
-// }
 
 const checkIfTablesExist = async () => {
   const result = await sql`

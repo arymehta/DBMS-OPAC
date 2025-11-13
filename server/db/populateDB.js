@@ -98,7 +98,6 @@ export const populateDB = async () => {
   try {
     await connectDB()
 
-    // await insertUsers()
     await insertLibraries()
     await insertISBNs()
     await insertBooks()

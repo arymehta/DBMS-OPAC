@@ -8,7 +8,6 @@ import axios from 'axios';
 
 export const IssuerDetails = () => {
   const [activeTab, setActiveTab] = useState('reservations');
-  // Default dummy data if props not provided
   const { state } = useContext(AuthContext);
   const [reservations, setReservations] = useState([]);
   const [activeIssues, setActiveIssues] = useState([]);
@@ -139,7 +138,6 @@ export const IssuerDetails = () => {
           ))}
         </div>
 
-        {/* Tab Content */}
         <div className="p-6">
           {activeTab === 'reservations' && (
             <div>

@@ -84,7 +84,6 @@ const applyFilters = (q, conditions) => {
 const searchCatalog = async (req, res) => {
   try {
     const q = req.body || {};
-    console.log("Search Catalog Called");
     console.log("Search Query:", q);
 
     await connectDB();
@@ -92,7 +91,10 @@ const searchCatalog = async (req, res) => {
     const conditions = [];
     applyFilters(q, conditions);
 
-    // Build WHERE clause - if no conditions, select all
+    // JS reduce -- reduces an array into a single item by repeatedly applying a functin
+    // if the filter exists and is not the first one, append it with an AND clause
+    // if its the first one, then just return the condition
+    // so this dynamically builds the filters to be applies when we search the catalog of books!
     const whereClause = conditions.length > 0
       ? conditions.reduce((acc, condition, index) => {
           if (index === 0) return condition;
