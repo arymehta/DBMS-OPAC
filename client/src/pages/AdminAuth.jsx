@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, Loader, ArrowRight } from 'lucide-react';
+import { Mail, Lock, Loader, ArrowRight, ShieldCheck } from 'lucide-react';
 import useAuthContext from '../hooks/useAuthContext';
 import { BACKEND_URL } from '../config';
 
@@ -70,14 +70,23 @@ const AdminAuth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-xl shadow-lg p-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 text-center">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center p-4">
+      {/* Decorative Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-indigo-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30"></div>
+      </div>
+
+      <div className="relative w-full max-w-md">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 p-8">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg shadow-indigo-500/30 mb-4">
+              <ShieldCheck className="text-white" size={28} />
+            </div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-900 bg-clip-text text-transparent">
               OPAC
             </h1>
-            <p className="text-center text-gray-600 mt-2 font-semibold">
+            <p className="text-gray-500 mt-2 font-semibold">
               Admin Portal
             </p>
           </div>
@@ -95,7 +104,7 @@ const AdminAuth = () => {
                   placeholder="Enter admin email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl bg-gray-50/50 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200"
                 />
               </div>
             </div>
@@ -112,7 +121,7 @@ const AdminAuth = () => {
                   placeholder="Enter password"
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl bg-gray-50/50 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200"
                 />
               </div>
             </div>
@@ -126,7 +135,7 @@ const AdminAuth = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
+              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:from-gray-300 disabled:to-gray-300 text-white font-semibold py-3.5 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 disabled:shadow-none"
             >
               {loading && <Loader size={20} className="animate-spin" />}
               Sign In
@@ -134,12 +143,12 @@ const AdminAuth = () => {
             </button>
           </form>
 
-          <div className="mt-6 pt-6 border-t border-gray-200 text-center">
+          <div className="mt-6 pt-6 border-t border-gray-100 text-center">
             <p className="text-gray-600 text-sm">
               Need candidate access?{' '}
               <a
                 href="/candidate-auth?mode=login"
-                className="text-blue-600 hover:text-blue-700 font-semibold"
+                className="text-indigo-600 hover:text-indigo-700 font-semibold"
               >
                 Switch to Candidate Login
               </a>
