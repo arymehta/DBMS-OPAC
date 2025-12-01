@@ -1,9 +1,8 @@
-import { BookOpen, Plus, FileText, Users, Calendar, AlertTriangle, RotateCcw, Library, Clock, CheckCircle, BookMarked, Hash, User, CalendarDays, Loader2 } from 'lucide-react';
+import { BookOpen, Plus, FileText, Users, Calendar, AlertTriangle, RotateCcw, Library, Clock, CheckCircle, BookMarked, Hash, User, CalendarDays, Loader2, Building2, MapPin, Phone, Mail, Clock3 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { BACKEND_URL } from '../config';
 import { toast } from 'sonner';
-import { library } from '@fortawesome/fontawesome-svg-core';
 
 
 export const AdminDashboard = () => {
@@ -18,6 +17,18 @@ export const AdminDashboard = () => {
         book_id: ''
     });
     const [isSubmittingReturn, setIsSubmittingReturn] = useState(false);
+    const [libraryForm, setLibraryForm] = useState({
+        name: '',
+        street: '',
+        city: '',
+        state: '',
+        zip_code: '',
+        contact_number: '',
+        email: '',
+        opening_hours: '',
+        closing_hours: ''
+    });
+    const [isSubmittingLibrary, setIsSubmittingLibrary] = useState(false);
     const [bookForm, setBookForm] = useState({
         isbn_id: '',
         title: '',
@@ -36,6 +47,7 @@ export const AdminDashboard = () => {
     const [numActiveIssues, setNumActiveIssues] = useState(0);
     const [numOverdueIssues, setNumOverdueIssues] = useState(0);
     const [issueHistory, setIssueHistory] = useState([]);
+    const [libraries, setLibraries] = useState([]);
 
     useEffect(() => {
         const getDashboardStats = async () => {
@@ -44,12 +56,14 @@ export const AdminDashboard = () => {
                 const issuesResponse = await axios.get(`${BACKEND_URL}/issues/total-issues`);
                 const booksResponse = await axios.get(`${BACKEND_URL}/books/get/total-books`);
                 const issueHistoryResponse = await axios.get(`${BACKEND_URL}/issues/issue-history`);
+                const librariesResponse = await axios.get(`${BACKEND_URL}/library/all`);
                 setNumBooks(booksResponse.data.data);
                 setNumMembers(membersResponse.data.data);
                 setNumActiveIssues(issuesResponse.data.data.active_issues);
                 setNumOverdueIssues(issuesResponse.data.data.overdue_issues);
                 console.log("Issue History:", issueHistoryResponse.data.data);
                 setIssueHistory(issueHistoryResponse.data.data);
+                setLibraries(librariesResponse.data.data || []);
             } catch (error) {
                 console.error("Error fetching dashboard stats:", error);
             }
@@ -167,6 +181,46 @@ export const AdminDashboard = () => {
         }
     };
 
+    const handleAddLibrarySubmit = async (e) => {
+        e.preventDefault();
+        if (isSubmittingLibrary) return;
+
+        // Validate required fields
+        if (!libraryForm.name || !libraryForm.city || !libraryForm.state) {
+            toast.error("Please fill in Library Name, City, and State");
+            return;
+        }
+
+        setIsSubmittingLibrary(true);
+        console.log('Add Library:', libraryForm);
+        try {
+            const response = await axios.post(`${BACKEND_URL}/library/add`, libraryForm);
+
+            if (response.data.message === "Library added successfully") {
+                toast.success("Library added successfully!");
+                setLibraryForm({
+                    name: '',
+                    street: '',
+                    city: '',
+                    state: '',
+                    zip_code: '',
+                    contact_number: '',
+                    email: '',
+                    opening_hours: '',
+                    closing_hours: ''
+                });
+            } else {
+                toast.error(response.data.message || "Failed to add library");
+            }
+        } catch (error) {
+            console.error("Error adding library:", error);
+            const errorMessage = error.response?.data?.message || "Failed to add library";
+            toast.error(errorMessage);
+        } finally {
+            setIsSubmittingLibrary(false);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
             {/* Decorative Background Elements */}
@@ -263,6 +317,21 @@ export const AdminDashboard = () => {
                             Add Book
                             {activeSection === 'add' && (
                                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-500 to-pink-500"></div>
+                            )}
+                        </button>
+                        <button
+                            onClick={() => setActiveSection('library')}
+                            className={`relative px-8 py-5 font-semibold whitespace-nowrap transition-all duration-300 flex items-center gap-3 ${activeSection === 'library'
+                                ? 'text-amber-600 bg-white'
+                                : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'
+                                }`}
+                        >
+                            <div className={`p-2 rounded-lg transition-colors ${activeSection === 'library' ? 'bg-amber-100' : 'bg-gray-100'}`}>
+                                <Building2 size={18} className={activeSection === 'library' ? 'text-amber-600' : 'text-gray-500'} />
+                            </div>
+                            Add Library
+                            {activeSection === 'library' && (
+                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-500 to-orange-500"></div>
                             )}
                         </button>
                     </div>
@@ -568,15 +637,20 @@ export const AdminDashboard = () => {
                                         </div>
                                         <div className="group">
                                             <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                                Library ID
+                                                Library
                                             </label>
-                                            <input
-                                                type="text"
+                                            <select
                                                 value={bookForm.library_id}
                                                 onChange={(e) => setBookForm({ ...bookForm, library_id: e.target.value })}
-                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-gray-50/50 hover:bg-white"
-                                                placeholder="Library ID"
-                                            />
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-gray-50/50 hover:bg-white appearance-none cursor-pointer"
+                                            >
+                                                <option value="">Select a library</option>
+                                                {libraries.map((lib) => (
+                                                    <option key={lib.library_id} value={lib.library_id}>
+                                                        {lib.name} ({lib.city}, {lib.state})
+                                                    </option>
+                                                ))}
+                                            </select>
                                         </div>
                                     </div>
 
@@ -586,6 +660,172 @@ export const AdminDashboard = () => {
                                     >
                                         <Plus size={20} />
                                         Add Book to Library
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeSection === 'library' && (
+                            <div className="animate-in fade-in duration-300">
+                                <div className="text-center mb-8">
+                                    <div className="inline-flex items-center justify-center p-3 bg-amber-100 rounded-2xl mb-4">
+                                        <Building2 className="text-amber-600" size={28} />
+                                    </div>
+                                    <h2 className="text-2xl font-bold text-gray-900">Add New Library</h2>
+                                    <p className="text-gray-500 mt-2">Register a new library branch in the system</p>
+                                </div>
+                                <div className="max-w-4xl mx-auto">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                                        <div className="group md:col-span-2 lg:col-span-1">
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                <span className="flex items-center gap-2">
+                                                    <Building2 size={16} className="text-gray-400" />
+                                                    Library Name <span className="text-red-400">*</span>
+                                                </span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={libraryForm.name}
+                                                onChange={(e) => setLibraryForm({ ...libraryForm, name: e.target.value })}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200 bg-gray-50/50 hover:bg-white"
+                                                placeholder="e.g., Central Library"
+                                            />
+                                        </div>
+
+                                        <div className="group md:col-span-2">
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                <span className="flex items-center gap-2">
+                                                    <MapPin size={16} className="text-gray-400" />
+                                                    Street Address
+                                                </span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={libraryForm.street}
+                                                onChange={(e) => setLibraryForm({ ...libraryForm, street: e.target.value })}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200 bg-gray-50/50 hover:bg-white"
+                                                placeholder="123 Main Street"
+                                            />
+                                        </div>
+
+                                        <div className="group">
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                City <span className="text-red-400">*</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={libraryForm.city}
+                                                onChange={(e) => setLibraryForm({ ...libraryForm, city: e.target.value })}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200 bg-gray-50/50 hover:bg-white"
+                                                placeholder="City name"
+                                            />
+                                        </div>
+
+                                        <div className="group">
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                State <span className="text-red-400">*</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={libraryForm.state}
+                                                onChange={(e) => setLibraryForm({ ...libraryForm, state: e.target.value })}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200 bg-gray-50/50 hover:bg-white"
+                                                placeholder="State name"
+                                            />
+                                        </div>
+
+                                        <div className="group">
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                ZIP Code
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={libraryForm.zip_code}
+                                                onChange={(e) => setLibraryForm({ ...libraryForm, zip_code: e.target.value })}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200 bg-gray-50/50 hover:bg-white"
+                                                placeholder="e.g., 411001"
+                                            />
+                                        </div>
+
+                                        <div className="group">
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                <span className="flex items-center gap-2">
+                                                    <Phone size={16} className="text-gray-400" />
+                                                    Contact Number
+                                                </span>
+                                            </label>
+                                            <input
+                                                type="tel"
+                                                value={libraryForm.contact_number}
+                                                onChange={(e) => setLibraryForm({ ...libraryForm, contact_number: e.target.value })}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200 bg-gray-50/50 hover:bg-white"
+                                                placeholder="+91 9876543210"
+                                            />
+                                        </div>
+
+                                        <div className="group">
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                <span className="flex items-center gap-2">
+                                                    <Mail size={16} className="text-gray-400" />
+                                                    Email Address
+                                                </span>
+                                            </label>
+                                            <input
+                                                type="email"
+                                                value={libraryForm.email}
+                                                onChange={(e) => setLibraryForm({ ...libraryForm, email: e.target.value })}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200 bg-gray-50/50 hover:bg-white"
+                                                placeholder="library@example.com"
+                                            />
+                                        </div>
+
+                                        <div className="group">
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                <span className="flex items-center gap-2">
+                                                    <Clock3 size={16} className="text-gray-400" />
+                                                    Opening Hours
+                                                </span>
+                                            </label>
+                                            <input
+                                                type="time"
+                                                value={libraryForm.opening_hours}
+                                                onChange={(e) => setLibraryForm({ ...libraryForm, opening_hours: e.target.value })}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200 bg-gray-50/50 hover:bg-white"
+                                            />
+                                        </div>
+
+                                        <div className="group">
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                                <span className="flex items-center gap-2">
+                                                    <Clock3 size={16} className="text-gray-400" />
+                                                    Closing Hours
+                                                </span>
+                                            </label>
+                                            <input
+                                                type="time"
+                                                value={libraryForm.closing_hours}
+                                                onChange={(e) => setLibraryForm({ ...libraryForm, closing_hours: e.target.value })}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all duration-200 bg-gray-50/50 hover:bg-white"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={handleAddLibrarySubmit}
+                                        disabled={isSubmittingLibrary}
+                                        className="w-full mt-8 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold px-6 py-4 rounded-xl hover:from-amber-600 hover:to-orange-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-amber-500/30 hover:shadow-xl hover:shadow-amber-500/40 flex items-center justify-center gap-2"
+                                    >
+                                        {isSubmittingLibrary ? (
+                                            <>
+                                                <Loader2 size={20} className="animate-spin" />
+                                                Adding Library...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Building2 size={20} />
+                                                Add Library
+                                            </>
+                                        )}
                                     </button>
                                 </div>
                             </div>

@@ -14,6 +14,7 @@ import reservationRoutes from "./routes/reservations.js";
 import fineRoutes from "./routes/fines.js";
 import scheduleFineJob from "./utils/fineCronJob.js";
 import memberRoutes from "./routes/members.js";
+import libraryRoutes from "./routes/library.js";
 
 
 const app = express();
@@ -35,6 +36,7 @@ app.use("/issues", issueRoutes);
 app.use("/reservations", reservationRoutes);
 app.use("/fines", fineRoutes);
 app.use("/members", memberRoutes);
+app.use("/library", libraryRoutes);
 
 
 
