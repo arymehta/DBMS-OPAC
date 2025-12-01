@@ -10,14 +10,14 @@ const Landing = () => {
   const announcements = [
     {
       id: 1,
-      title: 'Registration Now Open',
-      description: 'Candidate registration is now live for the 2025 batch.',
+      title: 'Library Undergoing Expansion',
+      description: 'Our main library will be closed for renovations from November 1 to November 15, 2025.',
       date: 'Oct 26, 2025'
     },
     {
       id: 2,
-      title: 'Important Deadline',
-      description: 'Last date to submit applications is November 15, 2025.',
+      title: 'All issuers are to collect membership cards',
+      description: 'Last date to collect is November 15, 2025.',
       date: 'Oct 26, 2025'
     },
     {

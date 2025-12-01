@@ -5,6 +5,7 @@ import { useContext } from 'react';
 import { BACKEND_URL } from '../config';
 import axios from 'axios';
 import { toast } from 'sonner';
+import useAuthContext from '../hooks/useAuthContext';
 
 
 export const IssuerDetails = () => {
@@ -16,6 +17,7 @@ export const IssuerDetails = () => {
 
   useEffect(() => {
     const uid = state.user?.uid;
+    const role = state.user?.role;
     const getReservations = async () => {
       try {
         const response = await axios.get(`${BACKEND_URL}/reservations/${uid}`);
@@ -120,7 +122,14 @@ export const IssuerDetails = () => {
   const reservationData = reservations || defaultReservations;
   const issueData = activeIssues || defaultActiveIssues;
   const previousIssueData = previousIssues || defaultActiveIssues;
+
+  // Only render for admin users
+  if (state.user?.role !== 'ISSUER') {
+    return null;
+  }
+
   return (
+
     <>
       <div className="bg-white rounded-xl border border-gray-200 shadow-lg">
         {/* Tab Navigation */}
@@ -230,15 +239,15 @@ export const IssuerDetails = () => {
                           </div>
                           <div className="flex flex-wrap gap-4 text-sm">
                             <span className="text-gray-600">
-                              {moment(issue?.due_date).diff(moment(issue?.issued_on)) > 0 ? (
+                              {moment(issue?.due_date).diff(moment(), 'days') >= 0 ? (
                                 <>
                                   <span className="font-semibold text-green-600">Days Left:{' '}
-                                    {moment(issue?.due_date).diff(moment(issue?.issued_on), 'days')}{' '}
+                                    {moment(issue?.due_date).diff(moment(), 'days')}{' '}
                                     days
                                   </span>
                                 </>
                               ) : (
-                                <span className="font-semibold text-red-600">Overdue : {moment(issue?.due_date).diff(moment(issue?.issued_on), 'days')} days</span>
+                                <span className="font-semibold text-red-600">Overdue by: {Math.abs(moment(issue?.due_date).diff(moment(), 'days'))} days</span>
                               )}
                             </span>
                           </div>
@@ -288,5 +297,6 @@ export const IssuerDetails = () => {
       </div>
       <br /><br />
     </>
+    
   );
 }

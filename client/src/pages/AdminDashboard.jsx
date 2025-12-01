@@ -57,13 +57,13 @@ export const AdminDashboard = () => {
                 const booksResponse = await axios.get(`${BACKEND_URL}/books/get/total-books`);
                 const issueHistoryResponse = await axios.get(`${BACKEND_URL}/issues/issue-history`);
                 const librariesResponse = await axios.get(`${BACKEND_URL}/library/all`);
-                setNumBooks(booksResponse.data.data);
-                setNumMembers(membersResponse.data.data);
-                setNumActiveIssues(issuesResponse.data.data.active_issues);
-                setNumOverdueIssues(issuesResponse.data.data.overdue_issues);
-                console.log("Issue History:", issueHistoryResponse.data.data);
-                setIssueHistory(issueHistoryResponse.data.data);
-                setLibraries(librariesResponse.data.data || []);
+                setNumBooks(booksResponse?.data?.data);
+                setNumMembers(membersResponse?.data?.data);
+                setNumActiveIssues(issuesResponse?.data?.data.active_issues);
+                setNumOverdueIssues(issuesResponse?.data?.data.overdue_issues);
+                console.log("Issue History:", issueHistoryResponse?.data?.data);
+                setIssueHistory(issueHistoryResponse?.data?.data);
+                setLibraries(librariesResponse?.data?.data || []);
             } catch (error) {
                 console.error("Error fetching dashboard stats:", error);
             }
@@ -106,6 +106,7 @@ export const AdminDashboard = () => {
 
             // Check if the message indicates success or failure
             if (response.data.message === "Book issued successfully") {
+                setNumActiveIssues(prev => prev + 1);
                 toast.success("Book issued successfully!");
                 setIssueForm({ uid: '', book_id: '', due_date: '' });
             } else {
@@ -898,17 +899,22 @@ export const AdminDashboard = () => {
                                                 </span>
                                             </td>
                                             <td className="py-4 px-6">
-                                                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
-                                                    issue.status === 'ACTIVE' 
-                                                        ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200' 
-                                                        : issue.status === 'OVERDUE'
-                                                        ? 'bg-rose-100 text-rose-700 ring-1 ring-rose-200'
-                                                        : 'bg-gray-100 text-gray-700 ring-1 ring-gray-200'
-                                                }`}>
-                                                    {issue.status === 'ACTIVE' && <CheckCircle size={14} />}
-                                                    {issue.status === 'OVERDUE' && <AlertTriangle size={14} />}
-                                                    {issue.status}
-                                                </span>
+                                                {(() => {
+                                                    const isReturned = issue.status === 'RETURNED';
+                                                    const isOverdue = !isReturned && new Date(issue.due_date) < new Date();
+                                                    return (
+                                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
+                                                            isReturned
+                                                                ? 'bg-gray-100 text-gray-700 ring-1 ring-gray-200'
+                                                                : isOverdue
+                                                                ? 'bg-rose-100 text-rose-700 ring-1 ring-rose-200'
+                                                                : 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200'
+                                                        }`}>
+                                                            {isReturned ? <CheckCircle size={14} /> : isOverdue ? <AlertTriangle size={14} /> : <CheckCircle size={14} />}
+                                                            {isReturned ? 'RETURNED' : isOverdue ? 'OVERDUE' : 'ACTIVE'}
+                                                        </span>
+                                                    );
+                                                })()}
                                             </td>   
                                         </tr>
                                     ))
