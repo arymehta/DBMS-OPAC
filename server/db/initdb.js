@@ -179,7 +179,7 @@ const createReservations = async () => {
       isbn_id VARCHAR(17) NOT NULL,
       library_id INT NOT NULL,
       uid INT NOT NULL,
-      expires_at TIMESTAMP DEFAULT NULL, -- if reservation is waitlisted, default value is NULL, when activated, set expiry time
+      expires_at TIMESTAMPTZ DEFAULT NULL, -- if reservation is waitlisted, default value is NULL, when activated, set expiry time
       status VARCHAR(10) CHECK (status IN ('RESERVED', 'WAITLISTED')) DEFAULT 'WAITLISTED',
       FOREIGN KEY(isbn_id) REFERENCES ISBN(isbn_id)
         ON UPDATE CASCADE
